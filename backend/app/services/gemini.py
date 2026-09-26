@@ -3,7 +3,7 @@
 from functools import lru_cache
 
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 
 from ..config import get_settings
 
@@ -20,9 +20,24 @@ def client() -> genai.Client:
     return genai.Client(api_key=key)
 
 
+def generate_content(**kwargs) -> types.GenerateContentResponse:
+    """`models.generate_content`, with API errors turned into readable GeminiErrors."""
+    try:
+        return client().models.generate_content(**kwargs)
+    except errors.APIError as exc:
+        if exc.code in (401, 403):
+            raise GeminiError(
+                "Gemini rejected GEMINI_API_KEY. Use an AI Studio API key "
+                "(starts with 'AIza') from https://aistudio.google.com/apikey"
+            ) from exc
+        if exc.code == 429:
+            raise GeminiError("Gemini rate limit or quota reached, try again shortly") from exc
+        raise GeminiError(f"Gemini API error {exc.code}: {exc.message}") from exc
+
+
 def generate_json(model: str, prompt: str, schema, system: str = ""):
     """Generate a response constrained to a Pydantic schema and return the parsed object."""
-    resp = client().models.generate_content(
+    resp = generate_content(
         model=model,
         contents=prompt,
         config=types.GenerateContentConfig(
@@ -39,7 +54,7 @@ def generate_json(model: str, prompt: str, schema, system: str = ""):
 
 def edit_image(model: str, image: bytes, prompt: str) -> bytes:
     """Send a photo plus instructions to an image model and return the first image it outputs."""
-    resp = client().models.generate_content(
+    resp = generate_content(
         model=model,
         contents=[types.Part.from_bytes(data=image, mime_type="image/jpeg"), prompt],
         config=types.GenerateContentConfig(response_modalities=["IMAGE", "TEXT"]),

@@ -41,7 +41,7 @@ def chat(messages: list[ChatMessage]) -> ChatResponse:
         )
         for m in messages
     ]
-    resp = gemini.client().models.generate_content(
+    resp = gemini.generate_content(
         model=settings.gemini_stylist_model,
         contents=contents,
         config=types.GenerateContentConfig(

@@ -138,3 +138,20 @@ def test_delete_all_data(client):
     )
     assert client.delete("/api/data").status_code == 204
     assert client.get("/api/looks").json() == []
+
+
+def test_gemini_auth_error_becomes_readable(monkeypatch):
+    from google.genai import errors
+
+    from app.services import gemini
+
+    class FakeModels:
+        def generate_content(self, **_):
+            raise errors.ClientError(401, {"error": {"code": 401, "message": "bad key"}})
+
+    class FakeClient:
+        models = FakeModels()
+
+    monkeypatch.setattr(gemini, "client", lambda: FakeClient())
+    with pytest.raises(gemini.GeminiError, match="AI Studio API key"):
+        gemini.generate_json("m", "hi", dict)
