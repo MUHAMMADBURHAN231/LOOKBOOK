@@ -1,0 +1,86 @@
+[
+  {
+    "id": "wedding-guest-western",
+    "title": "Wedding guest (Western)",
+    "tags": ["wedding", "guest", "formal", "semi-formal", "ceremony"],
+    "text": "Follow the invitation dress code. Cocktail attire: tailored suit in navy, charcoal or mid-grey with a light shirt and tie, or a knee-to-midi dress. Avoid white, ivory or anything that could upstage the couple. Evening weddings allow darker colours and richer fabrics like velvet; daytime and outdoor weddings suit linen, pastels and lighter suiting."
+  },
+  {
+    "id": "wedding-guest-desi",
+    "title": "Pakistani / South Asian wedding events",
+    "tags": ["wedding", "shaadi", "mehndi", "barat", "walima", "desi", "pakistani", "festive", "sherwani", "kurta"],
+    "text": "Mehndi: bright yellows, greens and oranges; embroidered kurta with shalwar or churidar, or a colourful lehenga. Barat: the most formal event; sherwani or prince coat for men, heavily embellished outfits in deep reds, maroons and golds for women. Walima: softer and more elegant; pastels, silver and champagne tones, waistcoat over kurta, or a lighter formal. Khussa or peshawari chappal complete the look."
+  },
+  {
+    "id": "job-interview",
+    "title": "Job interview",
+    "tags": ["interview", "job", "office", "work", "professional", "corporate"],
+    "text": "Dress one step above the company's daily dress code. Corporate: a well-fitted navy or charcoal suit, white or light-blue shirt, minimal accessories. Tech and start-ups: smart casual, such as a blazer over a plain knit or crisp shirt with dark chinos or tailored trousers and clean leather shoes. Fit matters more than price."
+  },
+  {
+    "id": "smart-casual",
+    "title": "Smart casual",
+    "tags": ["smart casual", "date", "dinner", "office", "blazer", "chinos"],
+    "text": "Mix one tailored piece with relaxed ones: an unstructured blazer with a T-shirt or fine-knit turtleneck, dark jeans or chinos, loafers or minimal leather sneakers. Keep the palette to 2-3 colours. A black turtleneck with a navy or camel blazer is a timeless combination."
+  },
+  {
+    "id": "streetwear",
+    "title": "Streetwear",
+    "tags": ["streetwear", "hoodie", "sneakers", "casual", "oversized", "cargo", "urban", "jordan"],
+    "text": "Built on proportion: oversized hoodies or boxy tees over wide or cargo pants, balanced by chunky sneakers such as Jordan 4s, New Balance or Salomons. Layer with a coach jacket, puffer or overshirt. Earth tones, washed black and a single accent colour keep it cohesive. A cap, crossbody bag or chain adds finish."
+  },
+  {
+    "id": "university-casual",
+    "title": "University / everyday casual",
+    "tags": ["university", "college", "campus", "class", "everyday", "casual", "student"],
+    "text": "Comfort first but intentional: a clean hoodie or crewneck sweater, straight-leg jeans, and white sneakers. For presentations, swap the hoodie for an overshirt or knit polo. In warm weather, a linen shirt or cotton kurta with chinos works well."
+  },
+  {
+    "id": "summer-heat",
+    "title": "Dressing for hot weather",
+    "tags": ["summer", "hot", "heat", "beach", "vacation", "linen", "weather"],
+    "text": "Breathable natural fabrics: linen, cotton lawn, seersucker. Lighter colours reflect heat. Loose silhouettes such as camp-collar shirts, wide trousers and lawn suits keep air moving. Sunglasses and a hat double as protection. Avoid polyester and heavy denim."
+  },
+  {
+    "id": "winter-layering",
+    "title": "Winter layering",
+    "tags": ["winter", "cold", "coat", "layering", "sweater", "jacket", "snow"],
+    "text": "Three layers: a base (tee or thermal), an insulating mid layer (merino sweater, cardigan or fleece) and an outer shell (overcoat, puffer or parka). A long camel or charcoal overcoat instantly smartens any outfit. Add a scarf in a contrasting texture and leather boots."
+  },
+  {
+    "id": "colour-basics",
+    "title": "Colour matching basics",
+    "tags": ["colour", "color", "match", "palette", "skin tone", "combination"],
+    "text": "Navy, grey, white, black, olive and camel are neutrals that pair with almost anything. Use the 60-30-10 rule: a dominant colour, a secondary and a small accent. Warm undertones suit earthy tones, gold and cream; cool undertones suit jewel tones, silver and pure white. Monochrome outfits in one colour family look elongating and polished."
+  },
+  {
+    "id": "trend-2026-autumn",
+    "title": "Trends: Autumn/Winter 2026",
+    "tags": ["trend", "trends", "2026", "autumn", "fall", "winter", "fashion week", "current", "seasonal"],
+    "text": "Key directions this season: relaxed tailoring with wider trousers and softer shoulders; chocolate brown and burgundy as the new neutrals; suede and brushed textures; oversized leather and bomber jackets; quiet-luxury knitwear; loafers with chunky soles; and utility details such as pockets and belts on outerwear."
+  },
+  {
+    "id": "trend-2026-spring",
+    "title": "Trends: Spring/Summer 2026",
+    "tags": ["trend", "trends", "2026", "spring", "summer", "current", "seasonal"],
+    "text": "Seasonal highlights: butter yellow and powder blue pastels, sheer layering, relaxed linen suiting, boxy short-sleeve shirts, fisherman sandals and retro running sneakers, plus crochet and open-weave knits for resortwear."
+  },
+  {
+    "id": "party-night-out",
+    "title": "Party / night out",
+    "tags": ["party", "night out", "club", "birthday", "concert", "evening"],
+    "text": "Lean into texture and a bit of shine: satin or silk shirts, leather jackets, sequins or velvet. A dark base (black trousers or jeans) lets one statement piece stand out. Chelsea boots or clean sneakers depending on the venue."
+  },
+  {
+    "id": "eid-festive",
+    "title": "Eid and festive occasions",
+    "tags": ["eid", "festive", "kurta", "shalwar kameez", "traditional", "pakistani", "celebration"],
+    "text": "Crisp shalwar kameez or kurta pajama in white, pastel or jewel tones, often with a contrasting waistcoat. Chikankari and subtle thread embroidery are timeless. Women's festive wear ranges from embroidered lawn and chiffon suits to anarkalis. Finish with khussa, a watch or light jewellery."
+  },
+  {
+    "id": "fit-guide",
+    "title": "Fit fundamentals",
+    "tags": ["fit", "tailoring", "size", "proportion", "body", "flattering"],
+    "text": "Shoulder seams should sit at the shoulder bone; sleeves should show a little shirt cuff; trousers should have minimal break. Balance proportions: pair a loose top with a slimmer bottom or vice versa. A defined waist such as a tucked shirt or a belt adds structure to any outfit."
+  }
+]
