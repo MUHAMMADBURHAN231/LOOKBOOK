@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="600" height="800">
+<rect width="300" height="400" fill="#ffffff"/>
+<defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#f5e6c8"/><stop offset=".5" stop-color="#fbf1dc"/><stop offset="1" stop-color="#f5e6c8"/></linearGradient></defs>
+<path d="M75 40 L115 25 Q150 45 185 25 L225 40 L290 240 L255 250 L225 115 L245 380 L55 380 L75 115 L45 250 L10 240 Z" fill="url(#g)" stroke="#00000022" stroke-width="2" stroke-linejoin="round"/>
+<path d="M150 45 L150 380" stroke="#c9a227" stroke-width="4"/><circle cx="150" cy="70" r="4" fill="#c9a227"/><circle cx="150" cy="105" r="4" fill="#c9a227"/><circle cx="150" cy="140" r="4" fill="#c9a227"/><circle cx="150" cy="175" r="4" fill="#c9a227"/><circle cx="150" cy="210" r="4" fill="#c9a227"/><circle cx="150" cy="245" r="4" fill="#c9a227"/><circle cx="150" cy="280" r="4" fill="#c9a227"/><circle cx="150" cy="315" r="4" fill="#c9a227"/><circle cx="150" cy="350" r="4" fill="#c9a227"/><path d="M75 360 Q150 330 225 360" stroke="#c9a227" stroke-width="3" fill="none"/>
+</svg>

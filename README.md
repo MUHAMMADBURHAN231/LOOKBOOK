@@ -7,10 +7,13 @@
  standing in front of a Ferrari"            →  a photo of you in exactly that
 ```
 
-## Features (MVP)
+## Features
 
 | Feature | Status |
 |---|---|
+| **Live Try-On**: webcam try-on in real time, powered by Decart's `lucy-vton-latest` realtime model | ✅ (preview mode without a key) |
+| **Embeddable store widget**: one `<script>` tag adds "Try it on live" buttons to any shop | ✅ |
+| **For Business** landing page and a **demo store** (`/shop`) using the widget | ✅ |
 | **Natural-language outfit design**: describe an outfit, get it on your photo | ✅ |
 | **Outfit Interpreter**: turns plain text into a structured garment spec (items, colours, fit, accessories, scene) | ✅ |
 | **Two generation engines**: Gemini image editing (fast, supports scenes) or IDM-VTON try-on pipeline | ✅ |
@@ -49,6 +52,29 @@ and keep the original background, so they can't put you "on the moon". The `edit
 instruction-following image model that handles garments **and** scenes in one call. The `vton`
 pipeline shows the research-style stack: text → garment image → masked try-on → face restoration.
 
+## Live try-on and the store widget
+
+Live Try-On (`/live`) streams the shopper's camera to Decart's realtime virtual try-on model over
+WebRTC and shows the re-rendered video with the garment on them. The browser never sees the Decart
+API key. `GET /api/live/token` (a Next.js route) mints a 10-minute client token restricted to the
+try-on model.
+
+Without `DECART_API_KEY` the page runs in **preview mode**: your camera with the garment image
+overlaid. That's enough to demo the flow, but it isn't AI.
+
+**Store integration** (see `/business`):
+
+```html
+<script src="https://YOUR-LOOKBOOK-HOST/widget.js" async></script>
+
+<button data-lookbook-garment="tailored navy wool blazer"
+        data-lookbook-name="Tailored Blazer"
+        data-lookbook-image="https://yourstore.com/blazer.jpg">Try it on live</button>
+```
+
+Clicking a trigger opens `/embed` in a modal iframe with camera permission. `/shop` is a demo store
+wired up exactly this way.
+
 ## Project layout
 
 ```
@@ -63,9 +89,16 @@ backend/
   app/services/imaging.py      preprocessing + mock renderer
   tests/                       pytest suite (runs in mock mode)
 frontend/
-  src/app/page.tsx             Studio (upload → describe → generate → save)
-  src/app/stylist/page.tsx     AI Stylist chat
-  src/app/wardrobe/page.tsx    Saved looks & collections
+  src/app/(site)/page.tsx      Studio (upload → describe → generate → save)
+  src/app/(site)/live/         Live Try-On (webcam + realtime model)
+  src/app/(site)/stylist/      AI Stylist chat
+  src/app/(site)/wardrobe/     Saved looks & collections
+  src/app/(site)/shop/         Demo store using the widget
+  src/app/(site)/business/     B2B landing page
+  src/app/embed/               Try-on view loaded inside the widget's iframe
+  src/app/api/live/token/      Mints short-lived Decart client tokens
+  src/components/LiveTryOn.tsx Camera, realtime session, garment picker, snapshots
+  public/widget.js             Embeddable store widget
   src/lib/api.ts               Typed API client
 ```
 
@@ -103,6 +136,7 @@ Open http://localhost:3000.
 |---|---|---|
 | `GEMINI_API_KEY` | Interpreter, `edit` pipeline, stylist | https://aistudio.google.com/apikey |
 | `REPLICATE_API_TOKEN` | `vton` pipeline (optional) | https://replicate.com/account/api-tokens |
+| `DECART_API_KEY` (in `frontend/.env.local`) | Live Try-On (paid, per use) | https://platform.decart.ai |
 
 With no `GEMINI_API_KEY` the app runs in **mock mode**: a keyword parser interprets outfits, the
 "generated" image is your photo with a caption, and the stylist uses canned answers from the

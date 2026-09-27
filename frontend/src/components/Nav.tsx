@@ -4,9 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
+  { href: "/live", label: "Live Try-On" },
   { href: "/", label: "Studio" },
   { href: "/stylist", label: "AI Stylist" },
   { href: "/wardrobe", label: "Wardrobe" },
+  { href: "/shop", label: "Demo Store" },
+  { href: "/business", label: "For Business" },
 ];
 
 export default function Nav() {
@@ -17,7 +20,7 @@ export default function Nav() {
         <Link href="/" className="text-xl font-black tracking-tight">
           LOOKBOOK
         </Link>
-        <nav className="flex gap-1 text-sm font-medium">
+        <nav className="flex flex-wrap justify-end gap-1 text-sm font-medium">
           {LINKS.map((l) => (
             <Link
               key={l.href}
