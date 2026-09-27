@@ -1,11 +1,26 @@
+# Web
 fastapi>=0.115
 uvicorn[standard]>=0.30
 python-multipart>=0.0.9
 pydantic>=2.7
 pydantic-settings>=2.3
+email-validator>=2.1
+
+# Data
+sqlalchemy[asyncio]>=2.0.30
+psycopg[binary]>=3.2
+alembic>=1.13
+pgvector>=0.3
+redis>=5.0
+celery[redis]>=5.4
+boto3>=1.34
+
+# Security
+argon2-cffi>=23.1
+
+# AI + media
 httpx>=0.27
 pillow>=10.3
 google-genai>=1.0
-
-# dev / tests
-pytest>=8.0
+langgraph>=0.2
+cryptography>=42

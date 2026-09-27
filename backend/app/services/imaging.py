@@ -5,8 +5,25 @@ import textwrap
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps, UnidentifiedImageError
 
-MAX_SIDE = 1024
+MAX_SIDE = 1536
 VTON_SIZE = (768, 1024)  # IDM-VTON / CatVTON expect 3:4 portrait
+Image.MAX_IMAGE_PIXELS = 50_000_000  # reject decompression bombs
+
+_SIGNATURES = {
+    "image/jpeg": (b"\xff\xd8\xff",),
+    "image/png": (b"\x89PNG\r\n\x1a\n",),
+    "image/webp": (b"RIFF",),
+}
+
+
+def sniff_mime(data: bytes) -> str | None:
+    """Identify the real file type from its magic bytes (never trust the client's MIME type)."""
+    for mime, sigs in _SIGNATURES.items():
+        if any(data.startswith(sig) for sig in sigs):
+            if mime == "image/webp" and data[8:12] != b"WEBP":
+                continue
+            return mime
+    return None
 
 
 class InvalidImage(ValueError):
@@ -15,10 +32,14 @@ class InvalidImage(ValueError):
 
 def normalize_upload(data: bytes) -> bytes:
     """Fix EXIF rotation, strip metadata (incl. GPS), convert to RGB JPEG, cap the size."""
+    if not sniff_mime(data):
+        raise InvalidImage("Only JPEG, PNG or WebP photos are supported.")
     try:
         img = Image.open(io.BytesIO(data))
+        img.verify()  # structural check before decoding pixels
+        img = Image.open(io.BytesIO(data))
         img = ImageOps.exif_transpose(img)
-    except (UnidentifiedImageError, OSError) as exc:
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError, SyntaxError) as exc:
         raise InvalidImage("Could not read that image. Please upload a JPEG or PNG.") from exc
     if min(img.size) < 256:
         raise InvalidImage("Image is too small. Please use a photo at least 256px wide.")

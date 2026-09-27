@@ -9,3 +9,7 @@ backend/storage/
 # Node (frontend has its own .gitignore too)
 node_modules/
 .DS_Store
+
+# Local data
+backups/
+.env

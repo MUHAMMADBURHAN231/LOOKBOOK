@@ -2,8 +2,8 @@
 
 import re
 
-from ..config import get_settings
-from ..schemas import Garment, OutfitSpec
+from app.core.config import get_settings
+from app.services.outfit import GarmentSpec as Garment, OutfitSpec
 from . import gemini
 
 SYSTEM = """You are a fashion technologist. Convert the user's outfit description into a

@@ -5,7 +5,7 @@ from functools import lru_cache
 from google import genai
 from google.genai import errors, types
 
-from ..config import get_settings
+from app.core.config import get_settings
 
 
 class GeminiError(RuntimeError):
@@ -27,8 +27,7 @@ def generate_content(**kwargs) -> types.GenerateContentResponse:
     except errors.APIError as exc:
         if exc.code in (401, 403):
             raise GeminiError(
-                "Gemini rejected GEMINI_API_KEY. Use an AI Studio API key "
-                "(starts with 'AIza') from https://aistudio.google.com/apikey"
+                "Gemini rejected GEMINI_API_KEY. Check the key at https://aistudio.google.com/apikey"
             ) from exc
         if exc.code == 429:
             raise GeminiError("Gemini rate limit or quota reached, try again shortly") from exc
@@ -65,3 +64,17 @@ def edit_image(model: str, image: bytes, prompt: str) -> bytes:
                 return part.inline_data.data
     text = resp.text or "no image returned (the request may have been blocked)"
     raise GeminiError(f"Image model did not return an image: {text}")
+
+
+def classify_image(model: str, image: bytes, instructions: str, schema):
+    """Ask a vision model for a structured judgement about an image."""
+    resp = generate_content(
+        model=model,
+        contents=[types.Part.from_bytes(data=image, mime_type="image/jpeg"), instructions],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json", response_schema=schema, temperature=0
+        ),
+    )
+    if resp.parsed is None:
+        raise GeminiError("Gemini returned no structured output")
+    return resp.parsed

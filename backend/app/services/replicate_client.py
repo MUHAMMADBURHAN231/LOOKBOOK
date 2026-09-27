@@ -5,7 +5,7 @@ import base64
 
 import httpx
 
-from ..config import get_settings
+from app.core.config import get_settings
 
 API = "https://api.replicate.com/v1"
 POLL_SECONDS = 1.5
