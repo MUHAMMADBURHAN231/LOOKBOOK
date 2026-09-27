@@ -1,15 +1,15 @@
 /*!
  * LOOKBOOK live try-on widget.
  *
- * Add one script tag to any store page:
- *   <script src="https://YOUR-LOOKBOOK-HOST/widget.js" async></script>
+ * 1. Add the script once:
+ *      <script src="https://YOUR-LOOKBOOK-HOST/widget.js" data-lookbook-key="pk_live_..." async></script>
+ * 2. Mark any button or link as a trigger:
+ *      <button data-lookbook-garment="tailored navy wool blazer"
+ *              data-lookbook-name="Tailored Blazer"
+ *              data-lookbook-image="https://yourstore.com/blazer.jpg">Try it on</button>
  *
- * Then mark any button or link as a try-on trigger:
- *   <button data-lookbook-garment="tailored navy wool blazer"
- *           data-lookbook-name="Tailored Blazer"
- *           data-lookbook-image="https://store.example/blazer.jpg">Try it on</button>
- *
- * Empty trigger elements get a default "Try it on live" label.
+ * The key is a publishable key: it only works on the origins registered for your store, and the
+ * try-on window refuses to load anywhere else (CSP frame-ancestors).
  */
 (function () {
   if (window.__lookbookWidget) return;
@@ -17,8 +17,10 @@
 
   var script = document.currentScript;
   var origin = new URL(script ? script.src : location.href).origin;
+  var storeKey = (script && script.getAttribute("data-lookbook-key")) || "";
   var SELECTOR = "[data-lookbook-garment]";
   var overlay = null;
+  var lastTrigger = null;
 
   function absolute(url) {
     try {
@@ -30,9 +32,12 @@
 
   function open(el) {
     close();
+    lastTrigger = el;
     var params = new URLSearchParams({
+      key: el.getAttribute("data-lookbook-key") || storeKey,
       garment: el.getAttribute("data-lookbook-garment") || "",
       name: el.getAttribute("data-lookbook-name") || el.getAttribute("data-lookbook-garment") || "",
+      host: location.origin,
     });
     var image = el.getAttribute("data-lookbook-image");
     if (image) params.set("image", absolute(image));
@@ -40,8 +45,9 @@
     overlay = document.createElement("div");
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Live try-on");
     overlay.style.cssText =
-      "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.6);" +
+      "position:fixed;inset:0;z-index:2147483647;background:rgba(6,8,10,.72);" +
       "display:flex;align-items:center;justify-content:center;padding:16px";
 
     var frame = document.createElement("iframe");
@@ -49,16 +55,15 @@
     frame.allow = "camera; autoplay; fullscreen";
     frame.title = "Live virtual try-on";
     frame.style.cssText =
-      "width:min(960px,100%);height:min(680px,100%);border:0;border-radius:16px;background:#fff;" +
-      "box-shadow:0 20px 60px rgba(0,0,0,.35)";
+      "width:min(880px,100%);height:min(640px,100%);border:1px solid #34414b;background:#0b0f12";
 
     var closeBtn = document.createElement("button");
     closeBtn.type = "button";
     closeBtn.setAttribute("aria-label", "Close try-on");
     closeBtn.textContent = "×";
     closeBtn.style.cssText =
-      "position:absolute;top:12px;right:16px;width:40px;height:40px;border:0;border-radius:999px;" +
-      "background:#fff;color:#111;font-size:26px;line-height:40px;cursor:pointer";
+      "position:absolute;top:12px;right:16px;width:44px;height:44px;border:1px solid #34414b;" +
+      "background:#06080a;color:#e9eef1;font:24px/40px monospace;cursor:pointer";
     closeBtn.onclick = close;
 
     overlay.onclick = function (e) {
@@ -67,11 +72,14 @@
     overlay.appendChild(frame);
     overlay.appendChild(closeBtn);
     document.body.appendChild(overlay);
+    closeBtn.focus();
   }
 
   function close() {
     if (overlay) overlay.remove();
     overlay = null;
+    if (lastTrigger) lastTrigger.focus();
+    lastTrigger = null;
   }
 
   function label(root) {

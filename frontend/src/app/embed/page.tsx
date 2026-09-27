@@ -1,10 +1,12 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import LiveTryOn, { promptFor } from "@/components/LiveTryOn";
+import { Suspense, useCallback, useEffect, useMemo } from "react";
+import LiveTryOn, { promptFor } from "@/components/live/LiveTryOn";
+import { api } from "@/lib/api";
 
-/** Minimal try-on view loaded in an iframe by public/widget.js on retailer sites. */
+/** Try-on window loaded by public/widget.js inside a store's page. The proxy only lets this page be
+ *  framed by origins registered for the store key (CSP frame-ancestors). */
 export default function EmbedPage() {
   return (
     <Suspense>
@@ -15,11 +17,15 @@ export default function EmbedPage() {
 
 function Embed() {
   const params = useSearchParams();
-  const name = params.get("name") || "this item";
+  const key = params.get("key") ?? "";
+  const host = params.get("host") ?? "";
+  const name = params.get("name") || "this piece";
   const description = params.get("garment") || name;
   const image = params.get("image") || undefined;
+  const selection = useMemo(() => ({ label: name, prompt: promptFor(description), image }), [name, description, image]);
+  const getToken = useCallback(() => api.widgetToken(key, host), [key, host]);
 
-  // Key presses inside the iframe don't reach the host page, so forward Escape to widget.js.
+  // Key presses inside the iframe don't reach the store page, so forward Escape to the widget.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") window.parent.postMessage({ type: "lookbook:close" }, "*");
@@ -29,16 +35,14 @@ function Embed() {
   }, []);
 
   return (
-    <div className="flex h-dvh flex-col gap-3 bg-white p-4">
+    <main id="main" className="flex min-h-dvh flex-col gap-4 bg-ink-900 p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h1 className="truncate text-base font-bold">Try on: {name}</h1>
-        <span className="shrink-0 text-xs text-zinc-400">
-          Powered by <span className="font-black text-brand-600">LOOKBOOK</span>
+        <h1 className="truncate text-base text-frost">Try on: {name}</h1>
+        <span className="label shrink-0 text-fog">
+          by LOOK<span className="text-signal">/</span>BOOK
         </span>
       </div>
-      <div className="flex-1">
-        <LiveTryOn compact initial={{ label: name, prompt: promptFor(description), image }} />
-      </div>
-    </div>
+      <LiveTryOn selection={selection} getToken={getToken} compact />
+    </main>
   );
 }

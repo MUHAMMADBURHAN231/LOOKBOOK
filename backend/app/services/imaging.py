@@ -64,8 +64,8 @@ def to_jpeg(img: Image.Image, quality: int = 92) -> bytes:
 def render_mock(photo: bytes, summary: str) -> bytes:
     """Stand-in for the generator: the user's photo with the outfit summary drawn on it."""
     img = Image.open(io.BytesIO(photo)).convert("RGB")
-    tint = Image.new("RGB", img.size, (219, 39, 119))
-    img = Image.blend(img, tint, 0.12)
+    tint = Image.new("RGB", img.size, (11, 15, 18))
+    img = Image.blend(img, tint, 0.18)
 
     draw = ImageDraw.Draw(img, "RGBA")
     width, height = img.size
@@ -75,12 +75,12 @@ def render_mock(photo: bytes, summary: str) -> bytes:
     except TypeError:  # Pillow < 10.1
         font = ImageFont.load_default()
 
-    lines = ["MOCK PREVIEW", *textwrap.wrap(summary, width=max(20, width // (font_size // 2 + 1)))]
+    lines = ["DEMO RESULT (NO AI KEY CONFIGURED)", *textwrap.wrap(summary, width=max(20, width // (font_size // 2 + 1)))]
     line_h = font_size + 6
     box_h = line_h * len(lines) + 24
-    draw.rectangle([0, height - box_h, width, height], fill=(17, 17, 17, 190))
+    draw.rectangle([0, height - box_h, width, height], fill=(6, 8, 10, 220))
     y = height - box_h + 12
     for i, line in enumerate(lines):
-        draw.text((16, y), line, fill=(244, 114, 182) if i == 0 else (255, 255, 255), font=font)
+        draw.text((16, y), line, fill=(255, 91, 31) if i == 0 else (233, 238, 241), font=font)
         y += line_h
     return to_jpeg(img)

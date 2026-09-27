@@ -94,6 +94,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:8000}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+        NEXT_PUBLIC_STORAGE_ORIGIN: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
     environment:
       API_INTERNAL_URL: http://api:8000
     ports: ["3000:3000"]

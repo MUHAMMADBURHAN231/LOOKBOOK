@@ -1,33 +1,202 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-brand-50: #fdf2f8;
-  --color-brand-100: #fce7f3;
-  --color-brand-200: #fbcfe8;
-  --color-brand-500: #ec4899;
-  --color-brand-600: #db2777;
-  --color-brand-700: #be185d;
+/* LOOKBOOK design tokens.
+   Glacier palette: near-black ink, frost text, one warm signal accent. All text pairs meet WCAG AA
+   (frost on ink 17:1, mist on ink 7.6:1, signal on ink 6.2:1, ink on signal 6.8:1). */
+@theme {
+  --color-ink-950: #06080a;
+  --color-ink-900: #0b0f12;
+  --color-ink-850: #10151a;
+  --color-ink-800: #161d23;
+  --color-line: #232c33;
+  --color-line-strong: #34414b;
+  --color-frost: #e9eef1;
+  --color-mist: #9aa7b0;
+  --color-fog: #6e7a83;
+  --color-ice: #bfe3ee;
+  --color-signal: #ff5b1f;
+  --color-bone: #ecece6;
+  --color-bone-deep: #d9d9d1;
+  --color-danger: #ff6b5e;
+  --color-ok: #5bd39a;
+
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #fafafa;
-  color: #18181b;
+  background: var(--color-ink-900);
+  color: var(--color-frost);
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 100;
+  text-rendering: optimizeLegibility;
 }
 
+::selection {
+  background: var(--color-signal);
+  color: var(--color-ink-950);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+/* Lenis smooth scrolling (marketing pages only). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Expanded display type, driven by Archivo's width axis. */
+@utility display-xl {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 125;
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+@utility display-md {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 115;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* Technical labels: mono, uppercase, tracked. */
+@utility label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@utility panel {
+  background: var(--color-ink-850);
+  border: 1px solid var(--color-line);
+}
+
+/* Buttons swap colours on hover (no fades) and press in slightly. */
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition:
+    background-color 140ms var(--ease-out),
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    transform 120ms var(--ease-out);
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
 }
-@utility btn-primary {
-  @apply btn bg-linear-to-r from-brand-600 to-rose-500 text-white shadow-sm hover:brightness-110;
+
+@utility btn-signal {
+  @apply btn;
+  background: var(--color-signal);
+  color: var(--color-ink-950);
+  &:hover:not(:disabled) {
+    background: var(--color-frost);
+  }
 }
-@utility btn-ghost {
-  @apply btn border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50;
+
+@utility btn-line {
+  @apply btn;
+  border-color: var(--color-line-strong);
+  color: var(--color-frost);
+  &:hover:not(:disabled) {
+    background: var(--color-frost);
+    border-color: var(--color-frost);
+    color: var(--color-ink-950);
+  }
 }
-@utility card {
-  @apply rounded-2xl border border-zinc-200 bg-white shadow-sm;
+
+@utility btn-quiet {
+  @apply btn;
+  padding: 0 0.75rem;
+  color: var(--color-mist);
+  &:hover:not(:disabled) {
+    color: var(--color-frost);
+    background: var(--color-ink-800);
+  }
 }
-@utility chip {
-  @apply rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700;
+
+/* Arrow glyph nudges forward on hover of its button or link. */
+@utility arrow-nudge {
+  transition: transform 180ms var(--ease-out);
+  :is(a, button):hover > & {
+    transform: translateX(4px);
+  }
+}
+
+@utility field {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--color-ink-950);
+  border: 1px solid var(--color-line-strong);
+  color: var(--color-frost);
+  font-size: 1rem;
+  transition: border-color 140ms var(--ease-out);
+  &::placeholder {
+    color: var(--color-fog);
+  }
+  &:hover {
+    border-color: var(--color-mist);
+  }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-signal);
+  }
+  &[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
