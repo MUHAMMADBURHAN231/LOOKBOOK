@@ -1,180 +1,143 @@
-# LOOKBOOK — AI Fashion Designer & Virtual Try-On
+# LOOKBOOK
 
-> Upload your photo. Describe **any** outfit in plain English. See a photorealistic image of **you** wearing it.
+AI fashion designer and virtual try-on. Upload a photo, describe any outfit in plain English, and see
+yourself wearing it, from a photo or live on camera. Includes an agentic AI stylist, a saved-looks
+wardrobe, and an embeddable live try-on widget for online stores.
 
-```
-"Wearing a sleek black turtleneck with a tailored navy blazer, aviator sunglasses,
- standing in front of a Ferrari"            →  a photo of you in exactly that
-```
+The system design is described in the LOOKBOOK technical specification. This README covers running,
+testing and deploying the code; [docs/spec-differences.md](docs/spec-differences.md) lists where the code
+departs from the specification.
 
-## Features
+## What's in the box
 
-| Feature | Status |
+| Area | Implementation |
 |---|---|
-| **Live Try-On**: webcam try-on in real time, powered by Decart's `lucy-vton-latest` realtime model | ✅ (preview mode without a key) |
-| **Embeddable store widget**: one `<script>` tag adds "Try it on live" buttons to any shop | ✅ |
-| **For Business** landing page and a **demo store** (`/shop`) using the widget | ✅ |
-| **Natural-language outfit design**: describe an outfit, get it on your photo | ✅ |
-| **Outfit Interpreter**: turns plain text into a structured garment spec (items, colours, fit, accessories, scene) | ✅ |
-| **Two generation engines**: Gemini image editing (fast, supports scenes) or IDM-VTON try-on pipeline | ✅ |
-| **AI Stylist chat** grounded in a fashion knowledge base (RAG); visualise up to 4 suggestions on your photo | ✅ |
-| **Wardrobe**: save looks, organise into collections, remix, share | ✅ |
-| **Privacy**: explicit consent, EXIF/GPS stripping, 30-day auto-deletion, "delete all my data" | ✅ |
-| **Mock mode**: the full app runs with no API keys, for offline development and demos | ✅ |
-| Trend-aware recommendations (seasonal notes in the KB) | 🟡 basic |
-| Body analysis (pose estimation + segmentation) | 🔜 roadmap |
-| Encryption at rest (AES-256), user accounts | 🔜 roadmap |
+| Web client | Next.js 16 (App Router), React 19, Tailwind v4, Zustand, three.js, GSAP + Lenis |
+| API gateway | FastAPI, async SQLAlchemy 2, WebSockets |
+| Data | PostgreSQL 16 + pgvector, Redis 7, S3-compatible storage (S3 / R2 / MinIO) |
+| Workers | Celery (try-on state machine, nightly retention purge) |
+| AI | Gemini (outfit interpreter, image edit, stylist, safety screening), Replicate (FLUX, IDM-VTON, CodeFormer, CLIP), Decart realtime try-on, or your own GPU worker |
+| Agent | LangGraph ReAct stylist with catalogue vector search, weather, style history and style-notes tools |
 
-## Architecture
+Every AI provider is optional. With no keys the whole product runs in **demo mode**: simulated
+generations that still go through the real queue, WebSocket, storage and database paths.
 
-```
-            ┌──────────────────────────────┐
-            │  Next.js frontend (:3000)    │  Studio · AI Stylist · Wardrobe
-            └──────────────┬───────────────┘
-                           │ REST (multipart / JSON)
-            ┌──────────────▼───────────────┐
-            │  FastAPI backend (:8000)     │
-            │                              │
- photo ───► │  imaging    normalize, strip EXIF, letterbox 768×1024
- text  ───► │  interpreter  Gemini 2.5 Flash → OutfitSpec (JSON schema)
-            │                              │
-            │  generator ─┬─ edit:  Gemini 2.5 Flash Image (photo + prompt)
-            │             └─ vton:  FLUX garment image → IDM-VTON per garment
-            │                       → CodeFormer face restore   (Replicate)
-            │                              │
-            │  stylist    BM25 retrieval over fashion_kb.json → Gemini 2.5 Pro
-            │  storage    SQLite + local media, retention purge on startup
-            └──────────────────────────────┘
+```mermaid
+graph LR
+  B[Browser] -->|HTTPS + cookies + CSRF| API[FastAPI]
+  B -->|presigned upload| S3[(S3 / R2 / MinIO)]
+  B <-->|WSS progress| API
+  API --> PG[(Postgres + pgvector)]
+  API --> R[(Redis)]
+  R --> W[Celery workers]
+  W --> AI[AI providers / GPU worker]
+  W --> S3
+  W -->|pub/sub events| R
+  B <-->|WebRTC| RT[Decart realtime]
 ```
 
-**Why two pipelines?** Classic virtual try-on models (IDM-VTON, CatVTON) need a *garment image*
-and keep the original background, so they can't put you "on the moon". The `edit` pipeline uses an
-instruction-following image model that handles garments **and** scenes in one call. The `vton`
-pipeline shows the research-style stack: text → garment image → masked try-on → face restoration.
+## Quick start (Docker)
 
-## Live try-on and the store widget
-
-Live Try-On (`/live`) streams the shopper's camera to Decart's realtime virtual try-on model over
-WebRTC and shows the re-rendered video with the garment on them. The browser never sees the Decart
-API key. `GET /api/live/token` (a Next.js route) mints a 10-minute client token restricted to the
-try-on model.
-
-Without `DECART_API_KEY` the page runs in **preview mode**: your camera with the garment image
-overlaid. That's enough to demo the flow, but it isn't AI.
-
-**Store integration** (see `/business`):
-
-```html
-<script src="https://YOUR-LOOKBOOK-HOST/widget.js" async></script>
-
-<button data-lookbook-garment="tailored navy wool blazer"
-        data-lookbook-name="Tailored Blazer"
-        data-lookbook-image="https://yourstore.com/blazer.jpg">Try it on live</button>
-```
-
-Clicking a trigger opens `/embed` in a modal iframe with camera permission. `/shop` is a demo store
-wired up exactly this way.
-
-## Project layout
-
-```
-backend/
-  app/main.py                  API routes
-  app/schemas.py               Pydantic models (OutfitSpec, Look, ...)
-  app/storage.py               SQLite + media files, retention, wipe
-  app/services/interpreter.py  NL → OutfitSpec (Gemini, offline fallback parser)
-  app/services/generator.py    edit / vton pipelines
-  app/services/stylist.py      RAG stylist chat
-  app/services/knowledge.py    BM25 search over app/data/fashion_kb.json
-  app/services/imaging.py      preprocessing + mock renderer
-  tests/                       pytest suite (runs in mock mode)
-frontend/
-  src/app/(site)/page.tsx      Studio (upload → describe → generate → save)
-  src/app/(site)/live/         Live Try-On (webcam + realtime model)
-  src/app/(site)/stylist/      AI Stylist chat
-  src/app/(site)/wardrobe/     Saved looks & collections
-  src/app/(site)/shop/         Demo store using the widget
-  src/app/(site)/business/     B2B landing page
-  src/app/embed/               Try-on view loaded inside the widget's iframe
-  src/app/api/live/token/      Mints short-lived Decart client tokens
-  src/components/LiveTryOn.tsx Camera, realtime session, garment picker, snapshots
-  public/widget.js             Embeddable store widget
-  src/lib/api.ts               Typed API client
-```
-
-## Getting started
-
-Requirements: Python 3.11+, Node 20+.
-
-### 1. Backend
+Requirements: Docker Desktop (Windows/macOS) or Docker Engine + Compose.
 
 ```bash
+cp .env.docker.example .env
+# fill in SECRET_KEY and the passwords (python -c "import secrets; print(secrets.token_urlsafe(48))")
+docker compose up --build
+```
+
+- Web: http://localhost:3000
+- API docs: http://localhost:8000/docs
+- MinIO console: http://localhost:9001
+
+The `migrate` service applies database migrations, creates the bucket with its retention rules and
+seeds the demo catalogue and demo store key.
+
+## Local development (without Docker)
+
+Requirements: Python 3.11+, Node 20+, PostgreSQL 16 with the `pgvector` extension, Redis 7.
+
+```bash
+# 1. Database roles (once)
+psql -U postgres -c "CREATE ROLE lookbook_owner LOGIN PASSWORD 'owner_dev_pw'"
+psql -U postgres -c "CREATE ROLE lookbook_app LOGIN PASSWORD 'app_dev_pw'"
+psql -U postgres -c "CREATE DATABASE lookbook OWNER lookbook_owner"
+psql -U postgres -d lookbook -c "CREATE EXTENSION vector"
+
+# 2. Backend
 cd backend
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env               # add keys (optional, see below)
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+cp .env.example .env
+alembic upgrade head
+python -m scripts.seed_catalog
 uvicorn app.main:app --reload --port 8000
-```
+celery -A app.workers.celery_app worker -Q tryon,default --pool solo   # second terminal
 
-API docs: http://localhost:8000/docs
-
-### 2. Frontend
-
-```bash
+# 3. Frontend (third terminal)
 cd frontend
 cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+In development, password-reset emails are written to `backend/storage/dev-outbox/` instead of being sent.
 
-### API keys
+## API keys
 
-| Key | Needed for | Get it |
+All keys live on the server (backend `.env`). None of them reach the browser.
+
+| Variable | Enables | Where to get it |
 |---|---|---|
-| `GEMINI_API_KEY` | Interpreter, `edit` pipeline, stylist | https://aistudio.google.com/apikey |
-| `REPLICATE_API_TOKEN` | `vton` pipeline (optional) | https://replicate.com/account/api-tokens |
-| `DECART_API_KEY` (in `frontend/.env.local`) | Live Try-On (paid, per use) | https://platform.decart.ai |
+| `GEMINI_API_KEY` | Outfit interpreter, photo-edit try-on (with scenes), stylist LLM, photo safety screening | https://aistudio.google.com/apikey |
+| `REPLICATE_API_TOKEN` | IDM-VTON try-on, FLUX garment images, CodeFormer, CLIP embeddings | https://replicate.com/account/api-tokens |
+| `DECART_API_KEY` | Live camera try-on | https://platform.decart.ai |
+| `GPU_WORKER_URL` + `GPU_WORKER_TOKEN` | Your own CatVTON/IDM-VTON worker | see [docs/gpu-worker.md](docs/gpu-worker.md) |
+| `TURNSTILE_SECRET_KEY` (+ `NEXT_PUBLIC_TURNSTILE_SITE_KEY` on the web app) | Bot protection on sign-up, sign-in and reset | https://dash.cloudflare.com (Turnstile) |
+| `SMTP_*` | Password-reset email delivery | any SMTP provider |
 
-With no `GEMINI_API_KEY` the app runs in **mock mode**: a keyword parser interprets outfits, the
-"generated" image is your photo with a caption, and the stylist uses canned answers from the
-knowledge base. Every screen still works, which is handy for development and as a backup for the demo.
-
-Model names are configurable in `backend/.env` (see `.env.example`).
+After switching embedding providers, rebuild catalogue vectors with `python -m scripts.seed_catalog --reembed`.
 
 ## Tests
 
 ```bash
-cd backend && python -m pytest -q
-cd frontend && npm run lint && npm run build
+cd backend && python -m pytest          # 43 tests against real Postgres + Redis, S3 via moto
+cd frontend && npm run lint && npx tsc --noEmit && npm run build
 ```
 
-## API
+CI (`.github/workflows/ci.yml`) runs both on every push, with pgvector and Redis service containers.
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/health` | Mode, default pipeline, retention |
-| POST | `/api/interpret` | `{description}` → `OutfitSpec` |
-| POST | `/api/generate` | multipart: `description`, `consent=true`, `photo` **or** `source_file`, optional `pipeline` |
-| POST | `/api/stylist/chat` | `{messages: [{role, content}]}` → reply + up to 4 outfit suggestions |
-| GET / POST | `/api/looks` | List (optional `?collection=`) / save a generation to the wardrobe |
-| DELETE | `/api/looks/{id}` | Remove a saved look |
-| DELETE | `/api/data` | Delete all photos, generations and looks |
+## Project layout
 
-## Demo script
+```
+backend/
+  app/main.py                    app factory, middleware order, error handlers
+  app/core/                      config (fail-fast in production), security, rate limits, CSRF,
+                                 sessions, logging with redaction, spend caps, email, Turnstile
+  app/db/                        SQLAlchemy models, engines
+  app/api/v1/                    auth, media, try-on + WebSocket, stylist, catalog, looks, live, account
+  app/services/pipeline/         try-on adapters: mock, gemini, replicate, remote GPU
+  app/services/stylist/          LangGraph agent + tools
+  app/workers/                   Celery app and tasks
+  alembic/                       migrations (run as schema owner)
+  scripts/                       seed_catalog, init_storage
+  tests/
+frontend/
+  src/proxy.ts                   CSP nonce, HSTS, auth redirect, per-store frame-ancestors
+  src/app/(marketing)/           landing (3D), for stores, demo store, privacy
+  src/app/(auth)/                sign up, sign in, forgot, reset
+  src/app/(app)/                 studio, live, stylist, wardrobe, account
+  src/app/embed/                 try-on window loaded by the store widget
+  src/components/three/          cloth simulation + scene
+  src/stores/  src/hooks/        Zustand stores, WebSocket + presigned upload hooks
+  public/widget.js               embeddable store widget
+docker-compose.yml               full stack incl. MinIO and nightly backups
+docs/                            security, operations, GPU worker contract
+```
 
-1. Upload your photo, tick consent.
-2. Click the Ferrari example chip → **Generate**. Toggle *Show original* for the before/after.
-3. Ask classmates for prompts: *"traditional Pakistani sherwani with gold embroidery"*,
-   *"full astronaut suit on the moon"*, *"streetwear: oversized hoodie, cargo pants, Jordan 4s"*.
-4. AI Stylist → *"What should I wear to a wedding?"* → **Visualize all 4 on me**.
-5. Save favourites to a collection in the Wardrobe.
+## Documentation
 
-## Roadmap
-
-- Body analysis with MediaPipe Pose + human parsing to validate photos and auto-pick garment masks
-- Embedding-based retrieval (Gemini embeddings + FAISS) and a scraped seasonal-trends corpus
-- AES-256 encryption at rest, user accounts, shareable public look pages
-- Queue-based GPU inference (Celery/Redis) and CDN image delivery for scale
+- [docs/security.md](docs/security.md): security controls and how each is enforced and tested
+- [docs/operations.md](docs/operations.md): deploying, HTTPS, secrets, backups and restore, billing alerts, key rotation
+- [docs/gpu-worker.md](docs/gpu-worker.md): HTTP contract for a self-hosted try-on GPU worker
+- [docs/spec-differences.md](docs/spec-differences.md): where the code differs from the technical specification, and why
