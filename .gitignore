@@ -13,3 +13,7 @@ node_modules/
 # Local data
 backups/
 .env
+
+# Local secrets (never commit)
+.env.local
+.env.*.local
