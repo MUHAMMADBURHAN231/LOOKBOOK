@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#06080a", colorScheme: "dark" };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Reading request headers opts every page into dynamic rendering, which the per-request CSP
   // nonce set in src/proxy.ts requires (Next.js applies the nonce to its own scripts).
   await headers();
