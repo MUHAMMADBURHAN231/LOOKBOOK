@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Scramble } from "@/components/marketing/Scramble";
 import ScrollVideo, {
   type ScrollVideoManifest,
@@ -81,6 +81,22 @@ const LOOKS: Look[] = [
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+/* Scroll to video position. Each chapter is a camera move between two stations, like the reference
+   sites: it eases out of the last look, travels, eases into the next and then holds there while
+   the chapter text and spec card are read. Travel keeps a linear share so scrolling always moves
+   something straight away. The video is re-timed at build time for even on-screen speed, so this
+   curve is the whole speed profile. */
+const HOLD = 0.3;
+const travel = (x: number) => 0.35 * x + 0.65 * x * x * (3 - 2 * x);
+
+function positionFor(scroll: number, marks: number[]) {
+  const n = marks.length;
+  const seg = Math.min(n - 1, Math.floor(scroll * n));
+  const from = seg === 0 ? 0 : marks[seg - 1];
+  const u = Math.min(1, (scroll * n - seg) / (1 - HOLD));
+  return from + (marks[seg] - from) * travel(u);
+}
+
 export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
   const story = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLSpanElement>(null);
@@ -90,6 +106,15 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
   const [loaded, setLoaded] = useState(0);
   const [ready, setReady] = useState(!video);
   const state = useRef({ look: -1, settled: false });
+  // Where each look is complete, as video positions. Equal thirds if the manifest has none.
+  const marks = useMemo(
+    () =>
+      video?.marks?.length === LOOKS.length
+        ? video.marks
+        : LOOKS.map((_, i) => (i + 1) / LOOKS.length),
+    [video],
+  );
+  const frames = video?.count ?? 1;
 
   useEffect(() => {
     const el = story.current;
@@ -98,26 +123,34 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
       trigger: el,
       start: "top 55%",
       end: "bottom bottom",
-      onUpdate: (self) => (progress.current = self.progress),
+      onUpdate: (self) =>
+        (progress.current = video
+          ? positionFor(self.progress, marks)
+          : self.progress),
     });
     return () => trigger.kill();
-  }, []);
+  }, [video, marks]);
 
   // Discrete story state follows the frame actually drawn.
-  const onFrame = useCallback((pos: number) => {
-    if (bar.current) bar.current.style.transform = `scaleX(${pos})`;
-    const seg = pos * LOOKS.length;
-    const i = pos < 0.04 ? -1 : Math.min(LOOKS.length - 1, Math.floor(seg));
-    const s = i >= 0 && (seg - i > 0.8 || pos > 0.985);
-    if (i !== state.current.look) {
-      state.current.look = i;
-      setLook(i);
-    }
-    if (s !== state.current.settled) {
-      state.current.settled = s;
-      setSettled(s);
-    }
-  }, []);
+  const onFrame = useCallback(
+    (pos: number) => {
+      if (bar.current) bar.current.style.transform = `scaleX(${pos})`;
+      let i = marks.findIndex((mark) => pos <= mark + 0.001);
+      if (i < 0) i = marks.length - 1;
+      if (pos < 0.01) i = -1;
+      // Settled once the playhead is within about a frame of the look's station.
+      const s = i >= 0 && (marks[i] - pos) * (frames - 1) < 1.2;
+      if (i !== state.current.look) {
+        state.current.look = i;
+        setLook(i);
+      }
+      if (s !== state.current.settled) {
+        state.current.settled = s;
+        setSettled(s);
+      }
+    },
+    [marks, frames],
+  );
 
   const onLoad = useCallback((fraction: number, coarseReady: boolean) => {
     setLoaded(fraction);
@@ -226,7 +259,9 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
             </div>
             <div className="hud absolute right-0 bottom-7 hidden text-right md:block">
               <p>
-                1080 &times; 1920 &middot; 24 fps
+                {video
+                  ? `${video.width} × ${video.height} · ${video.count} frames`
+                  : "Real-time 3D"}
                 <br />
                 One take, no cuts.
               </p>
@@ -286,7 +321,7 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
         </section>
 
         {/* Scroll distance for the story; everything above renders in the sticky layer. */}
-        <div ref={story} id="how" className="h-[360dvh] scroll-mt-16" />
+        <div ref={story} id="how" className="h-[480dvh] scroll-mt-16" />
       </div>
     </div>
   );

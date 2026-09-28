@@ -1,7 +1,29 @@
 {
-  "pattern": "/look/frames/f-{i}.webp",
-  "count": 351,
+  "count": 420,
   "pad": 4,
-  "width": 720,
-  "height": 1270
+  "width": 1080,
+  "height": 1920,
+  "marks": [
+    0.2093,
+    0.5487,
+    1.0
+  ],
+  "tiers": [
+    {
+      "width": 720,
+      "pattern": "/look/frames/720/f-{i}.webp"
+    },
+    {
+      "width": 1080,
+      "pattern": "/look/frames/1080/f-{i}.webp"
+    }
+  ],
+  "proxy": {
+    "pattern": "/look/frames/proxy/s-{i}.webp",
+    "width": 144,
+    "height": 256,
+    "cols": 10,
+    "rows": 10,
+    "sheets": 5
+  }
 }

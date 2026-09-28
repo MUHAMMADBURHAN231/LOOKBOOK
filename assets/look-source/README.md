@@ -21,4 +21,6 @@ next as start and end frames, in project "LOOKBOOK landing: dressing sequence":
 2. blouse to blazer: job `84815cb3-7480-47f6-a0c1-92796cf8371d`
 3. blazer to coat: job `91b85372-eb85-46b0-a617-3f92262d8f51`
 
-Built with the defaults (24 fps, 720 px wide, 6 frames blended at each join): 351 frames, 5.3 MB.
+Built with the defaults: each clip motion-interpolated x4 (96 fps) from its 1080p source, 6 source
+frames blended at each join, re-timed to 420 frames of even on-screen change, and written at 720 and
+1080 px wide. The page loads one width, chosen for the screen.
