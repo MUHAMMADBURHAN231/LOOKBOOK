@@ -25,7 +25,7 @@ Each control lists where it is implemented and how it is verified. Tests live in
 - **Upload safety:** file type is checked from magic bytes (not the client's MIME type), images are
   structurally verified, capped at 50 megapixels (decompression bombs), re-encoded, and stripped of
   metadata including GPS. Portraits that are explicit or appear to show a minor are refused.
-- **Encryption at rest:** S3/R2/MinIO objects use SSE-AES256, enforced in the presigned POST policy.
+- **Encryption at rest:** S3/R2/SeaweedFS objects use SSE-AES256, enforced in the presigned POST policy.
   The local development backend encrypts files with AES-256-GCM.
 - **Retention:** raw portraits after 14 days, results after 90 days, temporary files after 1 day,
   via bucket lifecycle rules and a nightly purge job.

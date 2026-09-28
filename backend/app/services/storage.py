@@ -1,6 +1,6 @@
 """Object storage behind one interface.
 
-- `S3Storage`: AWS S3, Cloudflare R2 or MinIO. Browsers upload directly with a presigned POST whose
+- `S3Storage`: AWS S3, Cloudflare R2 or SeaweedFS (docker compose). Browsers upload directly with a presigned POST whose
   policy pins the content type, a size range and server-side AES-256 encryption.
 - `LocalStorage`: files on disk, encrypted with AES-256-GCM, served through HMAC-signed expiring
   URLs on the API. Lets the whole app run without Docker/S3 in development.
@@ -124,7 +124,7 @@ class S3Storage(Storage):
         self.client.head_bucket(Bucket=self.bucket)
 
     def purge_older_than(self, prefix, days):
-        # In S3/R2/MinIO the bucket lifecycle rules (scripts/init_storage.py) do this server-side.
+        # In S3/R2/SeaweedFS the bucket lifecycle rules (scripts/init_storage.py) do this server-side.
         return 0
 
     def ensure_bucket_and_lifecycle(self) -> None:
@@ -136,7 +136,7 @@ class S3Storage(Storage):
             if s.s3_region != "us-east-1":
                 kwargs["CreateBucketConfiguration"] = {"LocationConstraint": s.s3_region}
             self.client.create_bucket(Bucket=self.bucket, **kwargs)
-        if not s.s3_endpoint_url:  # AWS only; MinIO/R2 don't implement this call
+        if not s.s3_endpoint_url:  # AWS only; R2 and SeaweedFS don't implement this call
             self.client.put_public_access_block(
                 Bucket=self.bucket,
                 PublicAccessBlockConfiguration={

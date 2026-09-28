@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     # --- Object storage -------------------------------------------------------
     storage_backend: Literal["s3", "local"] = "local"
     local_storage_dir: Path = BACKEND_DIR / "storage"
-    s3_endpoint_url: str | None = None  # e.g. http://localhost:9000 for MinIO, R2 endpoint
+    s3_endpoint_url: str | None = None  # e.g. http://localhost:8333 (SeaweedFS in docker compose), an R2 endpoint
     s3_public_endpoint_url: str | None = None  # endpoint browsers use for presigned URLs
     s3_region: str = "us-east-1"
     s3_access_key_id: str = ""

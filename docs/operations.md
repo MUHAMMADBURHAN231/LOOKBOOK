@@ -17,7 +17,10 @@
 5. **Turnstile.** Create a widget, set `TURNSTILE_SECRET_KEY` (API) and
    `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (web build).
 6. **Storage.** Run `python -m scripts.init_storage` once against the production bucket. It blocks
-   public access, applies lifecycle retention rules and sets CORS for your app origin.
+   public access, applies lifecycle retention rules and sets CORS for your app origin. With the
+   bundled SeaweedFS service, `S3_SSE_KEK` must be 64 hex characters
+   (`python -c "import secrets; print(secrets.token_hex(32))"`). Losing it makes stored objects
+   unreadable, so keep it in the secret store with the other keys.
 7. **Merchants.** Insert store rows into `merchants` with a `pk_live_...` key and their exact
    origins, for example `https://shop.example.com`.
 
@@ -51,7 +54,7 @@ disk isn't a backup.
 Restore into a fresh database:
 
 ```bash
-ls backups/daily/                     # pick a dump, e.g. lookbook-<date>.sql.gz
+ls backups/daily/                     # pick a dump, e.g. lookbook-20260928.sql.gz
 gunzip -c backups/daily/<dump>.sql.gz | docker compose exec -T postgres psql -U postgres -d lookbook
 ```
 

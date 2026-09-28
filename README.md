@@ -14,7 +14,7 @@ departs from the specification.
 |---|---|
 | Web client | Next.js 16 (App Router), React 19, Tailwind v4, Zustand, three.js, GSAP + Lenis |
 | API gateway | FastAPI, async SQLAlchemy 2, WebSockets |
-| Data | PostgreSQL 16 + pgvector, Redis 7, S3-compatible storage (S3 / R2 / MinIO) |
+| Data | PostgreSQL 16 + pgvector, Redis 7, S3-compatible storage (S3 / R2 / SeaweedFS) |
 | Workers | Celery (try-on state machine, nightly retention purge) |
 | AI | Gemini (outfit interpreter, image edit, stylist, safety screening), Replicate (FLUX, IDM-VTON, CodeFormer, CLIP), Decart realtime try-on, or your own GPU worker |
 | Agent | LangGraph ReAct stylist with catalogue vector search, weather, style history and style-notes tools |
@@ -25,7 +25,7 @@ generations that still go through the real queue, WebSocket, storage and databas
 ```mermaid
 graph LR
   B[Browser] -->|HTTPS + cookies + CSRF| API[FastAPI]
-  B -->|presigned upload| S3[(S3 / R2 / MinIO)]
+  B -->|presigned upload| S3[(S3 / R2 / SeaweedFS)]
   B <-->|WSS progress| API
   API --> PG[(Postgres + pgvector)]
   API --> R[(Redis)]
@@ -48,7 +48,7 @@ docker compose up --build
 
 - Web: http://localhost:3000
 - API docs: http://localhost:8000/docs
-- MinIO console: http://localhost:9001
+- S3 storage (SeaweedFS): http://localhost:8333
 
 The `migrate` service applies database migrations, creates the bucket with its retention rules and
 seeds the demo catalogue and demo store key.
@@ -131,7 +131,7 @@ frontend/
   src/components/three/          cloth simulation + scene
   src/stores/  src/hooks/        Zustand stores, WebSocket + presigned upload hooks
   public/widget.js               embeddable store widget
-docker-compose.yml               full stack incl. MinIO and nightly backups
+docker-compose.yml               full stack incl. SeaweedFS S3 storage and nightly backups
 docs/                            security, operations, GPU worker contract
 ```
 

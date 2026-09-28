@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 // Server-side calls (inside Docker) may need a different host than the browser uses.
 const API_INTERNAL_URL = (process.env.API_INTERNAL_URL ?? API_URL).replace(/\/$/, "");
-// Where presigned storage URLs point (S3/R2/MinIO), if not the API itself.
+// Where presigned storage URLs point (S3/R2/SeaweedFS), if not the API itself.
 const STORAGE_ORIGIN = process.env.NEXT_PUBLIC_STORAGE_ORIGIN ?? "";
 const SESSION_COOKIE = "lb_session";
 const APP_ROUTES = ["/studio", "/live", "/stylist", "/wardrobe", "/account"];
