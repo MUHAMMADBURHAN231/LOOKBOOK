@@ -1,0 +1,10 @@
+* text=auto
+# Files that run inside Linux containers must keep LF endings, even on a Windows checkout
+# (Git for Windows converts to CRLF by default, which breaks shell scripts).
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.py text eol=lf
+*.webp binary
+*.png binary
+*.jpg binary
+*.woff2 binary

@@ -41,10 +41,13 @@ graph LR
 Requirements: Docker Desktop (Windows/macOS) or Docker Engine + Compose.
 
 ```bash
-cp .env.docker.example .env
-# fill in SECRET_KEY and the passwords (python -c "import secrets; print(secrets.token_urlsafe(48))")
+python scripts/setup_env.py   # writes .env with generated secrets (keeps values you already set)
 docker compose up --build
 ```
+
+On Windows, run these in PowerShell from the repository folder with Docker Desktop running. The first
+build takes several minutes. Add AI keys to `.env` later and apply them with
+`docker compose up -d api worker`.
 
 - Web: http://localhost:3000
 - API docs: http://localhost:8000/docs
