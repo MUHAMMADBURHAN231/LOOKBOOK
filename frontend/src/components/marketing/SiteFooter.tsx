@@ -1,42 +1,26 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/ui/Wordmark";
 
-const COLUMNS = [
-  { title: "Product", links: [["Studio", "/studio"], ["Live try-on", "/live"], ["Stylist", "/stylist"], ["Wardrobe", "/wardrobe"]] },
-  { title: "Stores", links: [["For stores", "/business"], ["Demo store", "/shop"], ["Widget install", "/business#install"]] },
-  { title: "Trust", links: [["Privacy", "/privacy"], ["Your data", "/account"]] },
-];
+const LINKS = [
+  ["For stores", "/business"],
+  ["Demo store", "/shop"],
+  ["Privacy", "/privacy"],
+  ["Sign in", "/login"],
+] as const;
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-ink-950">
-      <div className="mx-auto grid max-w-[1440px] gap-12 px-5 py-16 md:grid-cols-[1.4fr_repeat(3,1fr)] md:px-8">
-        <div className="space-y-4">
-          <Wordmark />
-          <p className="max-w-xs text-sm leading-relaxed text-mist">
-            Portraits are encrypted, never used for training, and deleted automatically after 14 days.
-          </p>
-        </div>
-        {COLUMNS.map((col) => (
-          <div key={col.title}>
-            <h2 className="label mb-4 text-fog">{col.title}</h2>
-            <ul className="space-y-3">
-              {col.links.map(([label, href]) => (
-                <li key={href}>
-                  <Link href={href} className="text-sm text-mist transition-colors hover:text-frost">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div className="border-t border-line">
-        <div className="label mx-auto flex max-w-[1440px] justify-between px-5 py-5 text-fog md:px-8">
-          <span>LOOKBOOK</span>
-          <span>Built for try-on, not for tracking</span>
-        </div>
+    <footer className="border-t border-border px-6 md:px-12">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-8 py-12 md:flex-row md:items-center md:justify-between">
+        <Wordmark />
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3">
+          {LINKS.map(([label, href]) => (
+            <Link key={href} href={href} className="text-sm text-ink-soft transition-colors hover:text-ink">
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <p className="text-sm text-ink-muted">Photos are encrypted and deleted after 14 days.</p>
       </div>
     </footer>
   );

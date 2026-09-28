@@ -47,7 +47,7 @@
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", "Live try-on");
     overlay.style.cssText =
-      "position:fixed;inset:0;z-index:2147483647;background:rgba(6,8,10,.72);" +
+      "position:fixed;inset:0;z-index:2147483647;background:rgba(17,17,17,.45);" +
       "display:flex;align-items:center;justify-content:center;padding:16px";
 
     var frame = document.createElement("iframe");
@@ -55,15 +55,15 @@
     frame.allow = "camera; autoplay; fullscreen";
     frame.title = "Live virtual try-on";
     frame.style.cssText =
-      "width:min(880px,100%);height:min(640px,100%);border:1px solid #34414b;background:#0b0f12";
+      "width:min(880px,100%);height:min(640px,100%);border:0;border-radius:16px;background:#f8f7f5";
 
     var closeBtn = document.createElement("button");
     closeBtn.type = "button";
     closeBtn.setAttribute("aria-label", "Close try-on");
     closeBtn.textContent = "×";
     closeBtn.style.cssText =
-      "position:absolute;top:12px;right:16px;width:44px;height:44px;border:1px solid #34414b;" +
-      "background:#06080a;color:#e9eef1;font:24px/40px monospace;cursor:pointer";
+      "position:absolute;top:12px;right:16px;width:44px;height:44px;border:0;border-radius:999px;" +
+      "background:#ffffff;color:#111111;font:24px/44px system-ui,sans-serif;cursor:pointer";
     closeBtn.onclick = close;
 
     overlay.onclick = function (e) {

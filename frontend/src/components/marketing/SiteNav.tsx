@@ -6,17 +6,16 @@ import { Wordmark } from "@/components/ui/Wordmark";
 import { useSession } from "@/lib/session";
 
 const LINKS = [
-  { href: "/#how",      label: "How it works" },
-  { href: "/business",  label: "For stores" },
-  { href: "/shop",      label: "Demo store" },
+  { href: "/#how", label: "How it works" },
+  { href: "/business", label: "For stores" },
 ];
 
 export function SiteNav() {
   const { user } = useSession();
   const path = usePathname();
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-canvas">
-      <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between gap-3 px-4 md:gap-6 md:px-12">
+    <header className="fixed inset-x-0 top-0 z-50 bg-canvas px-6 md:px-12">
+      <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3">
         <Wordmark />
 
         <nav aria-label="Main" className="hidden items-center gap-8 md:flex">
@@ -24,27 +23,26 @@ export function SiteNav() {
             <Link
               key={l.href}
               href={l.href}
-              className={`label transition-colors duration-150 ${
-                path === l.href ? "text-ink" : "text-ink-muted hover:text-ink"
-              }`}
+              aria-current={path === l.href ? "page" : undefined}
+              className={`text-sm transition-colors duration-150 ${path === l.href ? "text-ink" : "text-ink-soft hover:text-ink"}`}
             >
               {l.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {user ? (
-            <Link href="/studio" className="btn-signal min-h-9 px-3 md:px-5">
+            <Link href="/studio" className="btn-signal min-h-9 px-4 text-sm">
               Open studio
             </Link>
           ) : (
             <>
-              <Link href="/login" className="btn-quiet min-h-9 px-2 md:px-3">
+              <Link href="/login" className="text-sm text-ink-soft transition-colors hover:text-ink">
                 Sign in
               </Link>
-              <Link href="/signup" className="btn-signal min-h-9 px-3 md:px-5">
-                Start free
+              <Link href="/signup" className="btn-signal min-h-9 px-4 text-sm">
+                Get started
               </Link>
             </>
           )}

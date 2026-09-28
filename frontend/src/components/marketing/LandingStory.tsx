@@ -6,270 +6,97 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GARMENTS } from "@/components/three/WomanScene";
-import { Glyph } from "@/components/ui/Glyph";
-import DecryptedText from "@/components/ui/DecryptedText";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// WebGL only runs in the browser; the page renders fully without it.
+// WebGL only runs in the browser; the text renders fully without it.
 const WomanScene = dynamic(() => import("@/components/three/WomanScene"), { ssr: false });
 
 const CHAPTERS = [
-  {
-    id: "chapter-describe",
-    index: "01",
-    kicker: "Describe",
-    title: "Say it the way\nyou'd say it\nto a friend.",
-    body: "Type the outfit in plain English. The outfit interpreter turns your sentence into a structured spec: each garment, its colour, fabric and cut, the accessories, even the setting.",
-  },
-  {
-    id: "chapter-fit",
-    index: "02",
-    kicker: "Fit",
-    title: "Four passes\nbetween your\nphoto and the look.",
-    body: "Every try-on runs as a background job and you watch each stage in real time. Your photo never leaves encrypted storage, and it is deleted on a schedule you can see.",
-  },
-  {
-    id: "chapter-live",
-    index: "03",
-    kicker: "Live",
-    title: "Skip the photo.\nOpen your\ncamera.",
-    body: "Live try-on re-renders your camera feed with the garment on you while you move. Turn around, raise an arm, check the back. Nothing is recorded.",
-  },
-  {
-    id: "chapter-style",
-    index: "04",
-    kicker: "Style",
-    title: "A stylist that\nchecks the\nweather first.",
-    body: "Ask what to wear and the stylist works like a person would: looks up the weather, searches the catalogue, remembers what you liked, hands you pieces you can try on in one tap.",
-  },
+  { title: "Describe it in your own words.", body: "LOOKBOOK reads the garment, colour, fabric and cut." },
+  { title: "See it on you.", body: "Your photo, the new outfit, in seconds. Encrypted and deleted on schedule." },
+  { title: "Or open your camera.", body: "Live try-on follows you as you move. Nothing is recorded." },
+  { title: "Ask a stylist.", body: "It checks the weather, searches the catalogue and remembers what you like." },
 ] as const;
 
 export function LandingStory() {
-  const story  = useRef<HTMLDivElement>(null);
+  const chapters = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
-  const [garment, setGarment] = useState(0);
+  const [garment, setGarment] = useState(-1);
+  const [chapter, setChapter] = useState(-1);
   const onGarment = useCallback((i: number) => setGarment(i), []);
 
   useEffect(() => {
-    const el = story.current;
+    const el = chapters.current;
     if (!el) return;
-
-    const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: el,
-        start: "top top",
-        end: "bottom bottom",
-        onUpdate: (self) => (progress.current = self.progress),
-      });
-    }, el);
-
-    return () => ctx.revert();
+    // Dressing starts as the first chapter comes up and finishes as the last one settles, so each
+    // garment lands while its chapter is on screen.
+    const trigger = ScrollTrigger.create({
+      trigger: el,
+      start: "top 55%",
+      end: "bottom bottom",
+      onUpdate: (self) => {
+        progress.current = self.progress;
+        // The first chapter waits until the hero has scrolled away.
+        const next = self.progress < 0.05 ? -1 : Math.min(CHAPTERS.length - 1, Math.floor(self.progress * CHAPTERS.length));
+        setChapter(next);
+      },
+    });
+    return () => trigger.kill();
   }, []);
 
   return (
-    <div ref={story} className="relative">
-      {/* ── Sticky 3-D canvas ── */}
+    <div className="relative">
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
-        <WomanScene
-          progress={progress}
-          onGarment={onGarment}
-          className="absolute inset-0"
-        />
-
-        {/* Garment label — top-right */}
-        <div className="pointer-events-none absolute top-20 right-6 text-right md:right-10">
-          <p className="label text-[10px] tracking-widest text-ink-muted">
-            {String(garment + 1).padStart(2, "0")} / {String(GARMENTS.length).padStart(2, "0")}
-          </p>
-          <p className="mt-0.5 font-mono text-[11px] tracking-wider text-ink-soft">
-            {GARMENTS[garment].name}
-          </p>
+        <WomanScene progress={progress} onGarment={onGarment} className="absolute inset-0" />
+        {/* One chapter at a time, cross-faded, in a fixed spot: top on phones (the figure sits
+            below), left of the figure on wider screens. */}
+        <div className="pointer-events-none absolute inset-x-0 top-24 px-6 md:top-1/2 md:-translate-y-1/2 md:px-12">
+          <div className="mx-auto grid max-w-[1200px]">
+            {CHAPTERS.map((c, i) => (
+              <div
+                key={c.title}
+                className={`col-start-1 row-start-1 max-w-[22rem] transition-[opacity,transform] duration-500 ease-[var(--ease-out)] ${
+                  chapter === i ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+                }`}
+              >
+                <h2 className="display-md text-[clamp(1.75rem,3.2vw,2.75rem)] text-ink">{c.title}</h2>
+                <p className="mt-4 text-base text-ink-soft md:text-lg">{c.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
-
-        {/* Scroll hint — bottom-centre, fades as you scroll */}
-        <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-60">
-          <span className="label text-[9px] tracking-[0.22em] text-ink-muted">Scroll</span>
-          <span className="block h-8 w-px bg-ink-muted/40" />
-        </div>
-      </div>
-
-      {/* ── Scrollable content layer ── */}
-      <div className="relative -mt-[100dvh]">
-        <Hero />
-
-        {CHAPTERS.map((ch, i) => (
-          <Chapter key={ch.id} chapter={ch} garmentName={GARMENTS[i]?.name} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Hero ─────────────────────────────────────────── */
-function Hero() {
-  return (
-    <section className="flex min-h-dvh flex-col justify-end px-6 pt-28 pb-12 md:px-12 md:pb-16">
-      <div className="mx-auto w-full max-w-[1440px]">
-        {/* Eyebrow */}
-        <p className="label mb-8 text-ink-muted">
-          <DecryptedText text="AI fashion designer · virtual try-on" animateOn="view" />
+        <p
+          className={`label pointer-events-none absolute right-6 bottom-8 text-ink-soft transition-opacity duration-300 md:right-12 ${
+            garment >= 0 ? "opacity-100" : "opacity-0"
+          }`}
+          aria-live="polite"
+        >
+          {garment >= 0 ? GARMENTS[garment].name : ""}
         </p>
+      </div>
 
-        {/* Headline — left half, large */}
-        <h1 className="display-xl max-w-[10ch] text-[clamp(3rem,11vw,10rem)] leading-[0.88] text-ink">
-          Describe it.{" "}
-          <span className="text-accent">Wear it.</span>
-        </h1>
-
-        {/* Sub-copy + CTAs */}
-        <div className="mt-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <p className="max-w-[36ch] text-lg font-light leading-relaxed text-ink-soft">
-            Upload a photo, write the outfit in a sentence, and LOOKBOOK shows you wearing it,
-            from a navy blazer to a sherwani with gold embroidery, in seconds.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/signup" className="btn-signal">
-              Try on your first look <Glyph name="arrow" className="arrow-nudge size-4" />
-            </Link>
-            <Link href="/#how" className="btn-line">
-              How it works
-            </Link>
+      <div className="relative -mt-[100dvh]">
+        <section className="flex min-h-dvh items-start px-6 pt-24 md:items-center md:px-12 md:pt-0">
+          <div className="mx-auto w-full max-w-[1200px]">
+            <h1 className="display-xl max-w-[9ch] text-[clamp(3rem,8vw,7rem)] text-ink">Describe it. Wear it.</h1>
+            <p className="mt-4 max-w-[26ch] text-lg text-ink-soft md:mt-6 md:text-xl">
+              Upload a photo, describe any outfit, see it on you.
+            </p>
+            <div className="mt-8 flex items-center gap-6 md:mt-10">
+              <Link href="/signup" className="btn-signal">
+                Get started
+              </Link>
+              <Link href="/#how" className="link-quiet">
+                How it works
+              </Link>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* Scroll distance for the dressing sequence; the chapters render in the sticky layer. */}
+        <div ref={chapters} id="how" className="h-[400dvh] scroll-mt-16" />
       </div>
-    </section>
-  );
-}
-
-/* ── Chapter ──────────────────────────────────────── */
-type ChapterDef = (typeof CHAPTERS)[number];
-
-function Chapter({ chapter, garmentName }: { chapter: ChapterDef; garmentName?: string }) {
-  return (
-    <section
-      id={chapter.id}
-      className="flex min-h-[110dvh] items-center px-6 py-24 md:px-12"
-      aria-labelledby={`${chapter.id}-title`}
-    >
-      <div className="mx-auto w-full max-w-[1440px]">
-        <div className="max-w-[38rem]">
-          {/* Index + kicker */}
-          <p className="label flex items-center gap-4 text-ink-muted">
-            <span className="tabular-nums">[{chapter.index}]</span>
-            <span className="h-px w-8 bg-border-strong" />
-            <span>{chapter.kicker}</span>
-            {garmentName && (
-              <>
-                <span className="h-px w-8 bg-border-strong" />
-                <span className="text-accent">{garmentName}</span>
-              </>
-            )}
-          </p>
-
-          {/* Title */}
-          <h2
-            id={`${chapter.id}-title`}
-            className="mt-8 font-display text-[clamp(2.2rem,5.5vw,4.5rem)] font-bold leading-[0.92] tracking-tight text-ink"
-            style={{ whiteSpace: "pre-line" }}
-          >
-            {chapter.title}
-          </h2>
-
-          {/* Body */}
-          <p className="mt-8 text-base font-light leading-relaxed text-ink-soft md:text-lg">
-            {chapter.body}
-          </p>
-
-          {/* Chapter-specific extras */}
-          {chapter.id === "chapter-describe" && <SpecCard />}
-          {chapter.id === "chapter-fit"      && <PipelineList />}
-          {chapter.id === "chapter-live"     && (
-            <Link href="/live" className="btn-line mt-10 inline-flex">
-              Try it live <Glyph name="arrow" className="arrow-nudge size-4" />
-            </Link>
-          )}
-          {chapter.id === "chapter-style"    && <Conversation />}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── SpecCard ─────────────────────────────────────── */
-function SpecCard() {
-  const rows = [
-    ["Garment", "blazer"],
-    ["Colour",  "navy"],
-    ["Fabric",  "wool"],
-    ["Fit",     "tailored"],
-    ["Details", "gold buttons"],
-    ["Scene",   "in front of a Ferrari"],
-  ];
-  return (
-    <figure className="mt-10 border border-border">
-      <div className="border-b border-border bg-surface-alt px-4 py-3 font-mono text-sm text-ink">
-        <span className="text-ink-muted">&gt;</span>{" "}
-        a tailored navy wool blazer with gold buttons, in front of a Ferrari
-      </div>
-      <dl className="grid grid-cols-[7rem_1fr] font-mono text-sm">
-        {rows.map(([k, v]) => (
-          <div key={k} className="contents">
-            <dt className="label border-b border-border px-4 py-2.5 text-ink-muted">{k}</dt>
-            <dd className="border-b border-border px-4 py-2.5 text-ink">{v}</dd>
-          </div>
-        ))}
-      </dl>
-      <figcaption className="label px-4 py-3 text-ink-muted">Outfit interpreter output</figcaption>
-    </figure>
-  );
-}
-
-/* ── PipelineList ─────────────────────────────────── */
-const STAGES = [
-  ["Pose",      "Body keypoints so the garment follows your shoulders and arms"],
-  ["Mask",      "The region your current clothes occupy, cut out cleanly"],
-  ["Diffusion", "The new garment generated into that region with real drape"],
-  ["Face",      "Your face restored so it stays exactly yours"],
-] as const;
-
-function PipelineList() {
-  return (
-    <ol className="mt-10 space-y-5">
-      {STAGES.map(([name, body], i) => (
-        <li key={name}>
-          <div className="label flex items-center gap-3 text-ink-muted">
-            <span className="tabular-nums text-ink-muted/60">{String(i + 1).padStart(2, "0")}</span>
-            <span className="text-ink">{name}</span>
-          </div>
-          <div className="mt-2 h-px bg-border" />
-          <p className="mt-2 text-sm font-light text-ink-soft">{body}</p>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/* ── Conversation ─────────────────────────────────── */
-function Conversation() {
-  return (
-    <div className="mt-10 space-y-5 text-sm">
-      <p className="font-light text-ink">
-        <span className="label mr-3 text-ink-muted">You</span>
-        Mehndi on Saturday, outdoors in Lahore. I want colour.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {["get_local_weather", "search_catalog", "search_style_notes"].map((t) => (
-          <span key={t} className="label border border-border px-2 py-1 text-ink-muted">
-            {t}
-          </span>
-        ))}
-      </div>
-      <p className="font-light text-ink-soft">
-        <span className="label mr-3 text-accent">Stylist</span>
-        It will be warm, so skip heavy layers. Start with the mustard embroidered kurta,
-        keep the trousers light, and add khussa. Tap the kurta to see it on you.
-      </p>
     </div>
   );
 }

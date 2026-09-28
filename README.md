@@ -131,7 +131,7 @@ frontend/
   src/app/(auth)/                sign up, sign in, forgot, reset
   src/app/(app)/                 studio, live, stylist, wardrobe, account
   src/app/embed/                 try-on window loaded by the store widget
-  src/components/three/          cloth simulation + scene
+  src/components/three/          scroll-driven dressing scene (three.js)
   src/stores/  src/hooks/        Zustand stores, WebSocket + presigned upload hooks
   public/widget.js               embeddable store widget
 docker-compose.yml               full stack incl. SeaweedFS S3 storage and nightly backups

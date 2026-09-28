@@ -18,15 +18,15 @@ const PRODUCTS = [
 export default async function ShopPage() {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    <div className="bg-bone pt-14 text-ink-950">
+    <div className="bg-canvas pt-16 text-ink">
       <Script src="/widget.js" data-lookbook-key="pk_demo_northwind" strategy="afterInteractive" nonce={nonce} />
       <div className="mx-auto max-w-[1440px] px-5 py-16 md:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-6 border-b border-bone-deep pb-10">
+        <div className="flex flex-wrap items-end justify-between gap-6 border-b border-border pb-10">
           <div>
-            <p className="label text-ink-800">Demo store, not a real shop</p>
+            <p className="label text-ink-soft">Demo store, not a real shop</p>
             <h1 className="display-xl mt-4 text-[clamp(2.4rem,6vw,5rem)]">Northwind Atelier</h1>
           </div>
-          <p className="max-w-md text-ink-800">
+          <p className="max-w-md text-ink-soft">
             Every &ldquo;Try it on&rdquo; button here comes from the LOOKBOOK widget, exactly as it would on your store.{" "}
             <Link href="/business#install" className="underline underline-offset-4">
               See how to install it
@@ -37,15 +37,15 @@ export default async function ShopPage() {
         <ul className="grid gap-x-6 gap-y-12 pt-12 sm:grid-cols-2 lg:grid-cols-3">
           {PRODUCTS.map((p) => (
             <li key={p.slug}>
-              <img src={`/demo/${p.slug}.webp`} alt={p.name} width={600} height={800} className="aspect-[3/4] w-full bg-bone-deep object-contain" />
+              <img src={`/demo/${p.slug}.webp`} alt={p.name} width={600} height={800} className="aspect-[3/4] w-full rounded-xl bg-surface-alt object-contain" />
               <div className="mt-4 flex items-baseline justify-between">
                 <h2 className="text-lg font-semibold">{p.name}</h2>
-                <span className="font-mono text-sm tabular-nums">${p.price}</span>
+                <span className="text-sm tabular-nums">${p.price}</span>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <button className="btn border-ink-950 text-ink-950 hover:bg-ink-950 hover:text-bone">Add to bag</button>
+                <button className="btn-line">Add to bag</button>
                 <button
-                  className="btn bg-ink-950 text-bone hover:bg-signal hover:text-ink-950"
+                  className="btn-signal"
                   data-lookbook-garment={p.description}
                   data-lookbook-name={p.name}
                   data-lookbook-image={`/demo/${p.slug}.webp`}

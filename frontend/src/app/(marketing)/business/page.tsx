@@ -34,7 +34,7 @@ const FAQ = [
 
 export default function BusinessPage() {
   return (
-    <div className="pt-14">
+    <div className="pt-16">
       <section className="border-b border-line px-5 py-24 md:px-8 md:py-32">
         <div className="mx-auto max-w-[1440px]">
           <p className="label text-mist">For stores</p>
@@ -68,7 +68,7 @@ export default function BusinessPage() {
         </ol>
       </section>
 
-      <section id="install" className="scroll-mt-20 bg-bone px-5 py-24 text-ink-950 md:px-8">
+      <section id="install" className="scroll-mt-20 bg-surface-alt px-5 py-24 text-ink md:px-8">
         <div className="mx-auto max-w-[1440px]">
           <h2 className="display-md text-[clamp(2rem,4vw,3.2rem)]">Install in two steps</h2>
           <div className="mt-12 grid gap-6 lg:grid-cols-2">

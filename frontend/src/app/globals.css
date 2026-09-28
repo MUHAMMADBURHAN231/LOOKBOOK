@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────────────────
-   LOOKBOOK · Editorial-minimal design system
-   Palette: warm white canvas, near-black ink, one
-   warm terracotta accent. Lots of air, Montserrat.
-───────────────────────────────────────────────────── */
+/* LOOKBOOK design tokens.
+   Minimal: an off-white canvas, near-black ink for text and actions, one typeface (Montserrat).
+   Colour comes from the clothes, not the interface. Every text colour meets WCAG AA (4.5:1) on
+   canvas, surface and surface-alt. */
 @theme {
   /* Canvas & surfaces */
   --color-canvas:       #F8F7F5;
@@ -20,9 +19,10 @@
   --color-border:       #E3E1DD;
   --color-border-strong:#C4C0BA;
 
-  /* Accent: warm terracotta, dark enough for white button text (5.3:1) */
-  --color-accent:       #9A5B3C;
-  --color-accent-light: #F2E6DE;
+  /* Actions and focus use ink; hover is one step lighter. */
+  --color-accent:       #111111;
+  --color-accent-hover: #3A3A3C;
+  --color-accent-light: #ECEBE8;
 
   /* Names used by the app pages, mapped by role onto the light palette:
      ink-9xx were backgrounds (now light surfaces), frost/mist/fog were text (now ink shades). */
@@ -35,7 +35,7 @@
   --color-frost:        #111111;
   --color-mist:         #555551;
   --color-fog:          #6B6B66;
-  --color-signal:       #9A5B3C;
+  --color-signal:       #111111;
   --color-bone:         #F8F7F5;
   --color-bone-deep:    #E8E5E0;
   --color-danger:       #B03A2E;
@@ -69,7 +69,7 @@ body {
 }
 
 ::selection {
-  background: var(--color-accent);
+  background: var(--color-ink);
   color: #fff;
 }
 
@@ -87,18 +87,16 @@ html.lenis body { height: auto; }
 /* ── Type scale ── */
 @utility display-xl {
   font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 0.9;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
 }
 
 @utility display-md {
   font-family: var(--font-display);
   font-weight: 600;
-  line-height: 0.95;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
 }
 
 @utility display-sm {
@@ -108,19 +106,19 @@ html.lenis body { height: auto; }
   letter-spacing: -0.01em;
 }
 
-/* Technical labels: mono, uppercase, tracked */
+/* Small labels: same typeface, sentence case, medium weight */
 @utility label {
-  font-family: var(--font-mono);
-  font-size: var(--text-micro);
-  line-height: 1rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.125rem;
+  letter-spacing: 0;
 }
 
-/* Panel — minimal, no fill, just a border */
 @utility panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
 }
 
 /* ── Buttons ── */
@@ -128,14 +126,15 @@ html.lenis body { height: auto; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   min-height: 2.75rem;
-  padding: 0 1.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  padding: 0 1.375rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
   border: 1px solid transparent;
+  border-radius: 999px;
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
@@ -148,25 +147,38 @@ html.lenis body { height: auto; }
   &:disabled { cursor: not-allowed; opacity: 0.4; }
 }
 
-/* Filled accent */
+/* Primary action */
 @utility btn-signal {
   @apply btn;
   background: var(--color-accent);
   color: #fff;
   &:hover:not(:disabled) {
-    background: var(--color-ink);
+    background: var(--color-accent-hover);
   }
 }
 
-/* Ghost — ink border on canvas */
+/* Secondary action */
 @utility btn-line {
   @apply btn;
   border-color: var(--color-border-strong);
   color: var(--color-ink);
   &:hover:not(:disabled) {
-    background: var(--color-ink);
     border-color: var(--color-ink);
-    color: var(--color-canvas);
+  }
+}
+
+/* Text link that reads as an action */
+@utility link-quiet {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+  transition: text-decoration-color 160ms var(--ease-out);
+  &:hover {
+    text-decoration-color: var(--color-ink);
   }
 }
 
@@ -194,12 +206,13 @@ html.lenis body { height: auto; }
   padding: 0.625rem 0.875rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
+  border-radius: 0.625rem;
   color: var(--color-ink);
   font-size: 1rem;
   transition: border-color 140ms var(--ease-out);
   &::placeholder { color: var(--color-ink-muted); }
   &:hover { border-color: var(--color-ink-soft); }
-  &:focus-visible { outline: none; border-color: var(--color-accent); }
+  &:focus-visible { outline: none; border-color: var(--color-ink); box-shadow: 0 0 0 1px var(--color-ink); }
   &[aria-invalid="true"] { border-color: var(--color-danger); }
 }
 
