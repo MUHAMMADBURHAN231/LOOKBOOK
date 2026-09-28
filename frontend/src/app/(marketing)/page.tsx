@@ -1,16 +1,24 @@
-import { existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import Link from "next/link";
 import { LandingStory } from "@/components/marketing/LandingStory";
+import type { ScrollVideoManifest } from "@/components/marketing/ScrollVideo";
 
-// The photographic dressing sequence turns on once its images are installed
-// (python scripts/fetch_look_assets.py); until then the 3D mannequin is shown.
-const HAS_PHOTOS = existsSync(path.join(process.cwd(), "public", "look", "state-4.webp"));
+// The scroll-scrubbed video turns on once its frames are installed (scripts/build_scroll_video.py
+// writes public/look/frames/manifest.json); until then the 3D mannequin is shown.
+function loadVideo(): ScrollVideoManifest | null {
+  try {
+    return JSON.parse(readFileSync(path.join(process.cwd(), "public", "look", "frames", "manifest.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+const VIDEO = loadVideo();
 
 export default function HomePage() {
   return (
     <>
-      <LandingStory photos={HAS_PHOTOS} />
+      <LandingStory video={VIDEO} />
 
       <section className="px-6 py-40 md:px-12 md:py-56">
         <div className="mx-auto grid max-w-[1200px] gap-10 md:grid-cols-2 md:items-end">

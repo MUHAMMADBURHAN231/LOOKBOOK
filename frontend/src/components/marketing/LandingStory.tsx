@@ -5,10 +5,17 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import DressingSequence, { GARMENTS } from "@/components/marketing/DressingSequence";
+import ScrollVideo, { type ScrollVideoManifest } from "@/components/marketing/ScrollVideo";
+import { GARMENTS as SCENE_GARMENTS } from "@/components/three/WomanScene";
 
-// Fallback when the photo set isn't installed: the 3D mannequin. WebGL only runs in the browser.
+// Fallback when the video frames aren't installed: the 3D mannequin. WebGL only runs in the browser.
 const WomanScene = dynamic(() => import("@/components/three/WomanScene"), { ssr: false });
+
+const FEATHER =
+  "linear-gradient(to right, transparent, #000 16%, #000 84%, transparent), linear-gradient(to bottom, transparent, #000 6%, #000 92%, transparent)";
+
+/** Garments in the order the video puts them on. */
+const VIDEO_GARMENTS = ["Silk blouse", "Tailored blazer", "Wool overcoat"];
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -19,12 +26,18 @@ const CHAPTERS = [
   { title: "Ask a stylist.", body: "It checks the weather, searches the catalogue and remembers what you like." },
 ] as const;
 
-export function LandingStory({ photos }: { photos: boolean }) {
+export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
   const chapters = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
   const [garment, setGarment] = useState(-1);
   const [chapter, setChapter] = useState(-1);
   const onGarment = useCallback((i: number) => setGarment(i), []);
+  // Caption follows the frame actually drawn: each garment owns an equal share of the video.
+  const onFrame = useCallback(
+    (pos: number) => setGarment(pos < 0.08 ? -1 : Math.min(VIDEO_GARMENTS.length - 1, Math.floor(pos * VIDEO_GARMENTS.length))),
+    [],
+  );
+  const names = video ? VIDEO_GARMENTS : SCENE_GARMENTS.map((g) => g.name);
 
   useEffect(() => {
     const el = chapters.current;
@@ -48,8 +61,20 @@ export function LandingStory({ photos }: { photos: boolean }) {
   return (
     <div className="relative">
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
-        {photos ? (
-          <DressingSequence progress={progress} onGarment={onGarment} className="absolute inset-0" />
+        {video ? (
+          <div
+            className="absolute bottom-0 left-1/2 aspect-[9/16] h-[60dvh] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[66%] md:h-[94dvh] md:-translate-y-1/2"
+            // Fade the frame's edges into the page so the photo backdrop has no visible border.
+            style={{ maskImage: FEATHER, WebkitMaskImage: FEATHER, maskComposite: "intersect", WebkitMaskComposite: "source-in" }}
+          >
+            <ScrollVideo
+              manifest={video}
+              progress={progress}
+              onFrame={onFrame}
+              label="A model trying on a silk blouse, a tailored blazer and a wool overcoat as you scroll."
+              className="h-full w-full"
+            />
+          </div>
         ) : (
           <WomanScene progress={progress} onGarment={onGarment} className="absolute inset-0" />
         )}
@@ -76,7 +101,7 @@ export function LandingStory({ photos }: { photos: boolean }) {
           }`}
           aria-live="polite"
         >
-          {garment >= 0 ? GARMENTS[garment].name : ""}
+          {garment >= 0 ? names[garment] : ""}
         </p>
       </div>
 
