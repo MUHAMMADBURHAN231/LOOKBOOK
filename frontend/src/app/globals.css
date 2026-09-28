@@ -1,90 +1,113 @@
 @import "tailwindcss";
 
-/* LOOKBOOK design tokens.
-   Glacier palette: near-black ink, frost text, one warm signal accent. All text pairs meet WCAG AA
-   (frost on ink 17:1, mist on ink 7.6:1, signal on ink 6.2:1, ink on signal 6.8:1). */
+/* ─────────────────────────────────────────────────────
+   LOOKBOOK · Editorial-minimal design system
+   Palette: warm white canvas, near-black ink, one
+   warm terracotta accent. Lots of air, Montserrat.
+───────────────────────────────────────────────────── */
 @theme {
-  --color-ink-950: #06080a;
-  --color-ink-900: #0b0f12;
-  --color-ink-850: #10151a;
-  --color-ink-800: #161d23;
-  --color-line: #232c33;
-  --color-line-strong: #34414b;
-  --color-frost: #e9eef1;
-  --color-mist: #9aa7b0;
-  --color-fog: #6e7a83;
-  --color-ice: #bfe3ee;
-  --color-signal: #ff5b1f;
-  --color-bone: #ecece6;
-  --color-bone-deep: #d9d9d1;
-  --color-danger: #ff6b5e;
-  --color-ok: #5bd39a;
+  /* Canvas & surfaces */
+  --color-canvas:       #F8F7F5;
+  --color-surface:      #FFFFFF;
+  --color-surface-alt:  #F2F1EE;
 
-  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  /* Ink (text) */
+  --color-ink:          #111111;
+  --color-ink-soft:     #555551;
+  --color-ink-muted:    #999994;
 
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Borders */
+  --color-border:       #E3E1DD;
+  --color-border-strong:#C4C0BA;
+
+  /* Accent — warm terracotta */
+  --color-accent:       #B07252;
+  --color-accent-light: #F2E6DE;
+
+  /* ── Keep legacy names so app/ dark pages still compile ── */
+  --color-ink-950:      #111111;
+  --color-ink-900:      #222222;
+  --color-ink-850:      #F8F7F5;
+  --color-ink-800:      #444440;
+  --color-line:         #E3E1DD;
+  --color-line-strong:  #C4C0BA;
+  --color-frost:        #111111;
+  --color-mist:         #666662;
+  --color-fog:          #999994;
+  --color-signal:       #B07252;
+  --color-bone:         #F8F7F5;
+  --color-bone-deep:    #E8E5E0;
+  --color-danger:       #C0392B;
+  --color-ok:           #27AE60;
+  --color-ice:          #D6E8F0;
+
+  /* Fonts */
+  --font-display:  var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-mono:     var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Easing */
+  --ease-out:      cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out:   cubic-bezier(0.77, 0, 0.175, 1);
 
   --text-micro: 0.6875rem;
   --text-micro--line-height: 1rem;
 }
 
+/* ── Base ── */
 html {
-  color-scheme: dark;
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--color-ink-900);
-  color: var(--color-frost);
+  background: var(--color-canvas);
+  color: var(--color-ink);
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 100;
+  font-weight: 400;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: var(--color-signal);
-  color: var(--color-ink-950);
+  background: var(--color-accent);
+  color: #fff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-signal);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-/* Lenis smooth scrolling (marketing pages only). */
+/* ── Lenis smooth scroll ── */
 html.lenis,
-html.lenis body {
-  height: auto;
-}
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
+html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
 
-/* Expanded display type, driven by Archivo's width axis. */
+/* ── Type scale ── */
 @utility display-xl {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 125;
-  font-weight: 800;
-  line-height: 0.88;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
   text-transform: uppercase;
 }
 
 @utility display-md {
   font-family: var(--font-display);
-  font-variation-settings: "wdth" 115;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 0.95;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
 }
 
-/* Technical labels: mono, uppercase, tracked. */
+@utility display-sm {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+/* Technical labels: mono, uppercase, tracked */
 @utility label {
   font-family: var(--font-mono);
   font-size: var(--text-micro);
@@ -93,21 +116,22 @@ html.lenis body {
   text-transform: uppercase;
 }
 
+/* Panel — minimal, no fill, just a border */
 @utility panel {
-  background: var(--color-ink-850);
-  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 
-/* Buttons swap colours on hover (no fades) and press in slightly. */
+/* ── Buttons ── */
 @utility btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
   min-height: 2.75rem;
-  padding: 0 1.25rem;
+  padding: 0 1.5rem;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   border: 1px solid transparent;
@@ -115,85 +139,77 @@ html.lenis body {
   user-select: none;
   touch-action: manipulation;
   transition:
-    background-color 140ms var(--ease-out),
-    color 140ms var(--ease-out),
-    border-color 140ms var(--ease-out),
+    background-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
     transform 120ms var(--ease-out);
-  &:active:not(:disabled) {
-    transform: scale(0.98);
-  }
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.45;
-  }
+  &:active:not(:disabled) { transform: scale(0.97); }
+  &:disabled { cursor: not-allowed; opacity: 0.4; }
 }
 
+/* Filled accent */
 @utility btn-signal {
   @apply btn;
-  background: var(--color-signal);
-  color: var(--color-ink-950);
+  background: var(--color-accent);
+  color: #fff;
   &:hover:not(:disabled) {
-    background: var(--color-frost);
+    background: var(--color-ink);
   }
 }
 
+/* Ghost — ink border on canvas */
 @utility btn-line {
   @apply btn;
-  border-color: var(--color-line-strong);
-  color: var(--color-frost);
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
   &:hover:not(:disabled) {
-    background: var(--color-frost);
-    border-color: var(--color-frost);
-    color: var(--color-ink-950);
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-canvas);
   }
 }
 
+/* Quiet text button */
 @utility btn-quiet {
   @apply btn;
   padding: 0 0.75rem;
-  color: var(--color-mist);
+  color: var(--color-ink-soft);
   &:hover:not(:disabled) {
-    color: var(--color-frost);
-    background: var(--color-ink-800);
+    color: var(--color-ink);
+    background: var(--color-surface-alt);
   }
 }
 
-/* Arrow glyph nudges forward on hover of its button or link. */
+/* Arrow nudge */
 @utility arrow-nudge {
-  transition: transform 180ms var(--ease-out);
-  :is(a, button):hover > & {
-    transform: translateX(4px);
-  }
+  transition: transform 200ms var(--ease-out);
+  :is(a, button):hover > & { transform: translateX(4px); }
 }
 
+/* Form field */
 @utility field {
   width: 100%;
   min-height: 2.75rem;
   padding: 0.625rem 0.875rem;
-  background: var(--color-ink-950);
-  border: 1px solid var(--color-line-strong);
-  color: var(--color-frost);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-ink);
   font-size: 1rem;
   transition: border-color 140ms var(--ease-out);
-  &::placeholder {
-    color: var(--color-fog);
-  }
-  &:hover {
-    border-color: var(--color-mist);
-  }
-  &:focus-visible {
-    outline: none;
-    border-color: var(--color-signal);
-  }
-  &[aria-invalid="true"] {
-    border-color: var(--color-danger);
-  }
+  &::placeholder { color: var(--color-ink-muted); }
+  &:hover { border-color: var(--color-ink-soft); }
+  &:focus-visible { outline: none; border-color: var(--color-accent); }
+  &[aria-invalid="true"] { border-color: var(--color-danger); }
+}
+
+/* Section divider */
+@utility hairline {
+  height: 1px;
+  background: var(--color-border);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
