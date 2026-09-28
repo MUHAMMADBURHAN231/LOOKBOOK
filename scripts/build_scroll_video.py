@@ -6,9 +6,13 @@
 Each clip is one transition (for example base look to blouse). Clips are joined in order into one
 continuous sequence. One clip ends on the same look the next begins with, but generated frames
 never match exactly, so the last few frames of one clip are cross-blended with the first few of
-the next (both are nearly still there) and the join doesn't pop. Frames are resized, written as WebP to
-frontend/public/look/frames/, and described in manifest.json, which the home page reads to switch
-from the 3D fallback to the video.
+the next (both are nearly still there) and the join doesn't pop.
+
+The studio backdrop is then lifted to pure white (a per-channel gain measured from the frame
+borders), so the page can blend the video with mix-blend-mode: multiply: white disappears into the
+page colour, the model is untouched, and page elements can sit visibly behind her. Frames are
+written as WebP to frontend/public/look/frames/ and described in manifest.json, which the home page
+reads to switch from the 3D fallback to the video.
 """
 
 from __future__ import annotations
@@ -41,6 +45,22 @@ def extract(clip: Path, fps: int, width: int, tmp: Path) -> list[Path]:
     return sorted(tmp.glob("*.png"))
 
 
+def backdrop_gains(frames: list[Image.Image]) -> list[float]:
+    """Per-channel gain that maps the median border colour to white."""
+    samples: list[tuple[int, int, int]] = []
+    for im in frames:
+        w, h = im.size
+        step = max(1, min(w, h) // 40)
+        for x in range(0, w, step):
+            samples += [im.getpixel((x, 4)), im.getpixel((x, h - 5))]
+        for y in range(0, h, step):
+            samples += [im.getpixel((4, y)), im.getpixel((w - 5, y))]
+    # Ignore dark samples (a garment crossing the edge).
+    light = [s for s in samples if sum(s) > 600] or samples
+    medians = [sorted(s[c] for s in light)[len(light) // 2] for c in range(3)]
+    return [255 / max(1, m) for m in medians]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("clips", nargs="+", type=Path)
@@ -48,6 +68,7 @@ def main() -> int:
     ap.add_argument("--width", type=int, default=720, help="frame width in pixels (default 720)")
     ap.add_argument("--quality", type=int, default=74, help="WebP quality (default 74)")
     ap.add_argument("--blend", type=int, default=6, help="frames cross-blended at each join (default 6)")
+    ap.add_argument("--keep-backdrop", action="store_true", help="don't lift the backdrop to white")
     args = ap.parse_args()
 
     if OUT.exists():
@@ -69,6 +90,12 @@ def main() -> int:
         sequence.extend(frames)
         print(f"{clip.name}: {len(frames)} frames")
     shutil.rmtree(work)
+
+    if sequence and not args.keep_backdrop:
+        gains = backdrop_gains([sequence[0], sequence[-1]])
+        print("backdrop gain per channel: " + ", ".join(f"{g:.3f}" for g in gains))
+        luts = [[min(255, round(v * g)) for v in range(256)] for g in gains]
+        sequence = [Image.merge("RGB", [ch.point(lut) for ch, lut in zip(im.split(), luts, strict=True)]) for im in sequence]
 
     for n, im in enumerate(sequence, start=1):
         im.save(OUT / f"f-{n:04d}.webp", "WEBP", quality=args.quality, method=6)

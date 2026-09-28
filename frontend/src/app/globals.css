@@ -115,6 +115,28 @@ html.lenis body { height: auto; }
   letter-spacing: 0;
 }
 
+/* Heads-up text: small monospace, used for corner notes, codes and labels. */
+@utility hud {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--color-ink-soft);
+}
+
+/* Landing stage: a soft studio vignette under a sparse dot grid. */
+@utility stage-backdrop {
+  background-image:
+    radial-gradient(rgb(17 17 17 / 0.13) 1px, transparent 1.4px),
+    radial-gradient(ellipse 55% 70% at 64% 50%, #ffffff 0%, var(--color-canvas) 55%, #ebe9e4 100%);
+  background-size: 36px 36px, 100% 100%;
+  @media (width < 48rem) {
+    background-image:
+      radial-gradient(rgb(17 17 17 / 0.13) 1px, transparent 1.4px),
+      radial-gradient(ellipse 80% 55% at 50% 72%, #ffffff 0%, var(--color-canvas) 60%, #ebe9e4 100%);
+  }
+}
+
 @utility panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);

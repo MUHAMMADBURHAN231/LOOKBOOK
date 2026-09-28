@@ -14,7 +14,7 @@ export function SiteNav() {
   const { user } = useSession();
   const path = usePathname();
   return (
-    <header className="fixed inset-x-0 top-0 z-50 bg-canvas px-6 md:px-12">
+    <header className={`fixed inset-x-0 top-0 z-50 px-6 md:px-12 ${path === "/" ? "" : "bg-canvas"}`}>
       <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3">
         <Wordmark />
 
@@ -24,7 +24,7 @@ export function SiteNav() {
               key={l.href}
               href={l.href}
               aria-current={path === l.href ? "page" : undefined}
-              className={`text-sm transition-colors duration-150 ${path === l.href ? "text-ink" : "text-ink-soft hover:text-ink"}`}
+              className={`hud uppercase transition-colors duration-150 ${path === l.href ? "text-ink" : "text-ink-soft hover:text-ink"}`}
             >
               {l.label}
             </Link>
@@ -38,7 +38,7 @@ export function SiteNav() {
             </Link>
           ) : (
             <>
-              <Link href="/login" className="text-sm text-ink-soft transition-colors hover:text-ink">
+              <Link href="/login" className="hud uppercase transition-colors hover:text-ink">
                 Sign in
               </Link>
               <Link href="/signup" className="btn-signal min-h-9 px-4 text-sm">

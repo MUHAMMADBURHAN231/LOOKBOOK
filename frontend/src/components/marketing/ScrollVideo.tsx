@@ -36,13 +36,24 @@ type Props = {
   progress: React.RefObject<number>;
   /** Called with the position (0..1) drawn, when it changes, for syncing captions. */
   onFrame?: (position: number) => void;
+  /** Loading progress: fraction of frames decoded, and whether the coarse pass (first frame plus
+   *  every 8th) is complete, which is enough to scrub the whole timeline. */
+  onLoad?: (fraction: number, ready: boolean) => void;
   className?: string;
   label: string;
-  /** Page colour the frame's edges fade into. */
+  /** Colour the frame's edges fade into. White suits a canvas blended with mix-blend-mode: multiply. */
   background?: string;
 };
 
-export default function ScrollVideo({ manifest, progress, onFrame, className = "", label, background = "#F8F7F5" }: Props) {
+export default function ScrollVideo({
+  manifest,
+  progress,
+  onFrame,
+  onLoad,
+  className = "",
+  label,
+  background = "#FFFFFF",
+}: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -72,16 +83,23 @@ export default function ScrollVideo({ manifest, progress, onFrame, className = "
     order.push(count - 1);
     for (let i = 1; i < count; i++) if (i % 8 !== 0 && i !== count - 1) order.push(i);
 
+    const coarse = Math.ceil(count / 8) + 1;
     let next = 0;
+    let done = 0;
+    let coarseDone = 0;
     const pump = async () => {
       while (!cancelled && next < order.length) {
-        const i = order[next++];
+        const slot = next++;
+        const i = order[slot];
         try {
           frames[i] = await decode(i);
           dirty = true;
         } catch {
           /* skip a frame that failed; neighbours cover it */
         }
+        done++;
+        if (slot < coarse) coarseDone++;
+        if (!cancelled) onLoad?.(done / count, coarseDone >= Math.min(coarse, count));
       }
     };
     for (let k = 0; k < 6; k++) void pump();
@@ -170,7 +188,7 @@ export default function ScrollVideo({ manifest, progress, onFrame, className = "
       ro.disconnect();
       frames.forEach((fr) => fr && "close" in fr && fr.close());
     };
-  }, [manifest, progress, onFrame, background]);
+  }, [manifest, progress, onFrame, onLoad, background]);
 
   return <canvas ref={canvas} role="img" aria-label={label} className={className} />;
 }
