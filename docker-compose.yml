@@ -59,9 +59,10 @@ services:
     volumes: [storagedata:/data]
     ports: ["8333:8333"]
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8333/healthz"]
+      test: ["CMD", "sh", "-c", "wget -qO- http://$(hostname -i):8333/healthz"]
       interval: 5s
       retries: 30
+      start_period: 10s
     restart: unless-stopped
 
   migrate:
