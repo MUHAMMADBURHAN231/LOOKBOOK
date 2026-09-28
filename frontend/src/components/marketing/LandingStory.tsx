@@ -11,9 +11,6 @@ import { GARMENTS as SCENE_GARMENTS } from "@/components/three/WomanScene";
 // Fallback when the video frames aren't installed: the 3D mannequin. WebGL only runs in the browser.
 const WomanScene = dynamic(() => import("@/components/three/WomanScene"), { ssr: false });
 
-const FEATHER =
-  "linear-gradient(to right, transparent, #000 16%, #000 84%, transparent), linear-gradient(to bottom, transparent, #000 6%, #000 92%, transparent)";
-
 /** Garments in the order the video puts them on. */
 const VIDEO_GARMENTS = ["Silk blouse", "Tailored blazer", "Wool overcoat"];
 
@@ -62,11 +59,7 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
     <div className="relative">
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
         {video ? (
-          <div
-            className="absolute bottom-0 left-1/2 aspect-[9/16] h-[60dvh] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[66%] md:h-[94dvh] md:-translate-y-1/2"
-            // Fade the frame's edges into the page so the photo backdrop has no visible border.
-            style={{ maskImage: FEATHER, WebkitMaskImage: FEATHER, maskComposite: "intersect", WebkitMaskComposite: "source-in" }}
-          >
+          <div className="absolute bottom-0 left-1/2 aspect-[9/16] h-[60dvh] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[66%] md:h-[94dvh] md:-translate-y-1/2">
             <ScrollVideo
               manifest={video}
               progress={progress}
