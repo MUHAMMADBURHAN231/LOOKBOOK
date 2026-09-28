@@ -2,15 +2,15 @@
 
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GARMENTS } from "@/components/three/WomanScene";
+import dynamic from "next/dynamic";
+import DressingSequence, { GARMENTS } from "@/components/marketing/DressingSequence";
+
+// Fallback when the photo set isn't installed: the 3D mannequin. WebGL only runs in the browser.
+const WomanScene = dynamic(() => import("@/components/three/WomanScene"), { ssr: false });
 
 gsap.registerPlugin(ScrollTrigger);
-
-// WebGL only runs in the browser; the text renders fully without it.
-const WomanScene = dynamic(() => import("@/components/three/WomanScene"), { ssr: false });
 
 const CHAPTERS = [
   { title: "Describe it in your own words.", body: "LOOKBOOK reads the garment, colour, fabric and cut." },
@@ -19,7 +19,7 @@ const CHAPTERS = [
   { title: "Ask a stylist.", body: "It checks the weather, searches the catalogue and remembers what you like." },
 ] as const;
 
-export function LandingStory() {
+export function LandingStory({ photos }: { photos: boolean }) {
   const chapters = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
   const [garment, setGarment] = useState(-1);
@@ -48,7 +48,11 @@ export function LandingStory() {
   return (
     <div className="relative">
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
-        <WomanScene progress={progress} onGarment={onGarment} className="absolute inset-0" />
+        {photos ? (
+          <DressingSequence progress={progress} onGarment={onGarment} className="absolute inset-0" />
+        ) : (
+          <WomanScene progress={progress} onGarment={onGarment} className="absolute inset-0" />
+        )}
         {/* One chapter at a time, cross-faded, in a fixed spot: top on phones (the figure sits
             below), left of the figure on wider screens. */}
         <div className="pointer-events-none absolute inset-x-0 top-24 px-6 md:top-1/2 md:-translate-y-1/2 md:px-12">

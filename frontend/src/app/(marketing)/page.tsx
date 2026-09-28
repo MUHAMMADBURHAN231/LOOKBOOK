@@ -1,10 +1,16 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import Link from "next/link";
 import { LandingStory } from "@/components/marketing/LandingStory";
+
+// The photographic dressing sequence turns on once its images are installed
+// (python scripts/fetch_look_assets.py); until then the 3D mannequin is shown.
+const HAS_PHOTOS = existsSync(path.join(process.cwd(), "public", "look", "state-4.webp"));
 
 export default function HomePage() {
   return (
     <>
-      <LandingStory />
+      <LandingStory photos={HAS_PHOTOS} />
 
       <section className="px-6 py-40 md:px-12 md:py-56">
         <div className="mx-auto grid max-w-[1200px] gap-10 md:grid-cols-2 md:items-end">
