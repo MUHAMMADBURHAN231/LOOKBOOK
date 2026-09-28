@@ -111,7 +111,7 @@ export default function BusinessPage() {
 
 function Snippet({ step, title, code }: { step: string; title: string; code: string }) {
   return (
-    <figure className="border border-ink-950 bg-ink-950 text-frost">
+    <figure className="min-w-0 border border-line bg-ink-950 text-frost">
       <figcaption className="flex items-center justify-between gap-4 border-b border-line px-5 py-3">
         <span className="label text-mist">
           <span className="text-signal">{step}</span> {title}

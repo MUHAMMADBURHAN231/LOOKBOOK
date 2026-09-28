@@ -11,34 +11,35 @@
   --color-surface:      #FFFFFF;
   --color-surface-alt:  #F2F1EE;
 
-  /* Ink (text) */
+  /* Ink (text). Every text colour passes WCAG AA (4.5:1) on canvas, surface and surface-alt. */
   --color-ink:          #111111;
   --color-ink-soft:     #555551;
-  --color-ink-muted:    #999994;
+  --color-ink-muted:    #6B6B66;
 
   /* Borders */
   --color-border:       #E3E1DD;
   --color-border-strong:#C4C0BA;
 
-  /* Accent — warm terracotta */
-  --color-accent:       #B07252;
+  /* Accent: warm terracotta, dark enough for white button text (5.3:1) */
+  --color-accent:       #9A5B3C;
   --color-accent-light: #F2E6DE;
 
-  /* ── Keep legacy names so app/ dark pages still compile ── */
-  --color-ink-950:      #111111;
-  --color-ink-900:      #222222;
-  --color-ink-850:      #F8F7F5;
-  --color-ink-800:      #444440;
+  /* Names used by the app pages, mapped by role onto the light palette:
+     ink-9xx were backgrounds (now light surfaces), frost/mist/fog were text (now ink shades). */
+  --color-ink-950:      #FFFFFF;
+  --color-ink-900:      #F8F7F5;
+  --color-ink-850:      #FFFFFF;
+  --color-ink-800:      #F2F1EE;
   --color-line:         #E3E1DD;
   --color-line-strong:  #C4C0BA;
   --color-frost:        #111111;
-  --color-mist:         #666662;
-  --color-fog:          #999994;
-  --color-signal:       #B07252;
+  --color-mist:         #555551;
+  --color-fog:          #6B6B66;
+  --color-signal:       #9A5B3C;
   --color-bone:         #F8F7F5;
   --color-bone-deep:    #E8E5E0;
-  --color-danger:       #C0392B;
-  --color-ok:           #27AE60;
+  --color-danger:       #B03A2E;
+  --color-ok:           #1E7A45;
   --color-ice:          #D6E8F0;
 
   /* Fonts */

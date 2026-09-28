@@ -125,7 +125,7 @@ function Hero() {
         {/* Sub-copy + CTAs */}
         <div className="mt-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <p className="max-w-[36ch] text-lg font-light leading-relaxed text-ink-soft">
-            Upload a photo, write the outfit in a sentence, and LOOKBOOK shows you wearing it —
+            Upload a photo, write the outfit in a sentence, and LOOKBOOK shows you wearing it,
             from a navy blazer to a sherwani with gold embroidery, in seconds.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -170,7 +170,7 @@ function Chapter({ chapter, garmentName }: { chapter: ChapterDef; garmentName?: 
           {/* Title */}
           <h2
             id={`${chapter.id}-title`}
-            className="mt-8 font-display text-[clamp(2.2rem,5.5vw,4.5rem)] font-700 leading-[0.92] tracking-tight text-ink"
+            className="mt-8 font-display text-[clamp(2.2rem,5.5vw,4.5rem)] font-bold leading-[0.92] tracking-tight text-ink"
             style={{ whiteSpace: "pre-line" }}
           >
             {chapter.title}
@@ -254,7 +254,8 @@ function PipelineList() {
 function Conversation() {
   return (
     <div className="mt-10 space-y-5 text-sm">
-      <p className="border-l-2 border-border-strong pl-4 font-light text-ink">
+      <p className="font-light text-ink">
+        <span className="label mr-3 text-ink-muted">You</span>
         Mehndi on Saturday, outdoors in Lahore. I want colour.
       </p>
       <div className="flex flex-wrap gap-2">
@@ -264,7 +265,8 @@ function Conversation() {
           </span>
         ))}
       </div>
-      <p className="border-l-2 border-accent pl-4 font-light text-ink-soft">
+      <p className="font-light text-ink-soft">
+        <span className="label mr-3 text-accent">Stylist</span>
         It will be warm, so skip heavy layers. Start with the mustard embroidered kurta,
         keep the trousers light, and add khussa. Tap the kurta to see it on you.
       </p>

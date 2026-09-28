@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { Wordmark } from "@/components/ui/Wordmark";
 
-/** Split layout for sign-in flows: a slow, monochrome Vanta fog on the left (static under reduced
+/** Split layout for sign-in flows: a slow, warm-neutral Vanta fog on the left (static under reduced
  *  motion or without WebGL), the form on the right. */
 export function AuthShell({ title, lead, children }: { title: string; lead: string; children: React.ReactNode }) {
   const fog = useRef<HTMLDivElement>(null);
@@ -22,10 +22,10 @@ export function AuthShell({ title, lead, children }: { title: string; lead: stri
           mouseControls: false,
           touchControls: false,
           gyroControls: false,
-          highlightColor: 0xbfe3ee,
-          midtoneColor: 0x1c2730,
-          lowlightColor: 0x0b0f12,
-          baseColor: 0x06080a,
+          highlightColor: 0xf2e6de,
+          midtoneColor: 0xe3d6cb,
+          lowlightColor: 0xece9e4,
+          baseColor: 0xf8f7f5,
           blurFactor: 0.62,
           speed: 0.55,
           zoom: 0.7,
