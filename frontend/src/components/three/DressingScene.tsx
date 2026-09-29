@@ -47,9 +47,9 @@ export type Scene3DManifest = {
 
 /** Where each look's spec card points, in model space (metres, Y up, facing +Z). */
 export const ANCHORS: [number, number, number][] = [
-  [0.215, 1.2, 0.03], // blouse: her left upper sleeve
-  [0.1, 1.2, 0.1], // blazer: left lapel
-  [0.19, 0.95, 0.11], // coat: left front, by the pocket
+  [0.34, 1.15, 0.03], // blouse: the robot's left upper sleeve
+  [0.1, 1.2, 0.17], // blazer: left lapel
+  [0.2, 0.85, 0.17], // coat: left front skirt
 ];
 
 const ORDER: GarmentName[] = ["blouse", "blazer", "coat"];
@@ -442,8 +442,21 @@ export default function DressingScene({
           if (mesh.isMesh) {
             mesh.castShadow = true;
             mesh.receiveShadow = true;
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.envMapIntensity = 0.8;
+            // The robot: a white clear-coated shell over dark metal joints.
+            (mesh.material as THREE.Material).dispose();
+            mesh.material =
+              mesh.name === "joint"
+                ? new THREE.MeshStandardMaterial({
+                    color: "#2A2A2E",
+                    roughness: 0.38,
+                    metalness: 0.55,
+                  })
+                : new THREE.MeshPhysicalMaterial({
+                    color: "#F1F1EF",
+                    roughness: 0.3,
+                    clearcoat: 0.7,
+                    clearcoatRoughness: 0.18,
+                  });
           }
         });
         scene.add(gltf.scene);

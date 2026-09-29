@@ -229,7 +229,7 @@ export function LandingStory({
               onLoad={onLoad}
               onAnchors={onAnchors}
               onUnsupported={onUnsupported}
-              label="A model being dressed in a silk blouse, a tailored blazer and a wool overcoat as you scroll. The garments assemble around her from their sewing panels."
+              label="A white robot mannequin being dressed in a silk blouse, a tailored blazer and a wool overcoat as you scroll. Each garment flies in as flat sewing patterns and sews itself on."
               className="absolute inset-0"
             />
             <div className="pointer-events-none absolute bottom-0 left-1/2 aspect-[9/16] h-[58dvh] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[64%] md:h-[92dvh] md:-translate-y-1/2">

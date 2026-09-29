@@ -23,3 +23,6 @@ scripts/scene3d/gen/
 scripts/scene3d/work/
 scripts/scene3d/web/
 scripts/scene3d/r/
+scripts/scene3d/robot/work/
+scripts/scene3d/robot/web/
+scripts/scene3d/robot/r/
