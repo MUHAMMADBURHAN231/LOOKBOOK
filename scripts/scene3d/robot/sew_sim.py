@@ -1,6 +1,6 @@
 """Sew a garment's pattern pieces onto the robot and let it drape (Blender cloth).
 
-    python sew_sim.py blouse [--frames 130] [--sew-force 3] [--friction 0.3] [--no-self]
+    python sew_sim.py blouse [--frames 130] [--sew-force N] [--friction 0.3] [--self]
 
 Sewing springs (loose edges between paired seam points) pull the pieces together; gravity eases in
 once the seams have started to close; the robot's envelope is the collision body. Saves every
@@ -28,7 +28,8 @@ ap.add_argument("--frames", type=int, default=130)
 ap.add_argument("--sew-force", type=float, default=None, help="override the fabric's sewing force")
 ap.add_argument("--friction", type=float, default=0.3)
 ap.add_argument("--quality", type=int, default=10)
-ap.add_argument("--no-self", dest="self", action="store_false", help="skip self collisions (faster)")
+ap.add_argument("--self", action="store_true",
+                help="self collisions (they can trap a seam edge on the wrong side of the other piece)")
 args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
 
 d = np.load(HERE / f"work/{args.name}-pattern.npz")
@@ -70,7 +71,13 @@ s.bending_stiffness = fab["bending"]
 s.air_damping = fab["air"]
 s.rest_shape_key = rest
 s.use_sewing_springs = True
-s.sewing_force_max = args.sew_force or fab["sew"]  # gentle: the pieces close over ~1 s, not a snap
+# Sewing: gentle while the pieces close (about a second, not a snap, which would crumple them);
+# then, once the seams have met, six times stronger, so they hold like stitches under the
+# garment's weight as gravity comes in.
+sew = args.sew_force or fab["sew"]
+for frame, f in ((1, sew), (20, sew), (50, 6 * sew)):
+    s.sewing_force_max = f
+    s.keyframe_insert("sewing_force_max", frame=frame)
 for frame, g in ((1, 0.0), (30, 0.0), (70, 1.0)):
     s.effector_weights.gravity = g
     s.effector_weights.keyframe_insert("gravity", frame=frame)

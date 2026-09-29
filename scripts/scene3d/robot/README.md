@@ -64,9 +64,11 @@ in Cycles, for checking: `python view_parts.py r/check --extra work/blouse-final
 - **sew_sim.py** runs Blender cloth with sewing springs. The rest shape is the flat pattern, so
   the arrangement's distortion doesn't become the garment's shape. The sewing force is capped in
   proportion to the fabric's weight, so pieces close over a second or so instead of snapping,
-  which would crumple them.
-  Gravity eases in once the seams are closing. Self-collision is on. Friction against the robot
-  is low, so fabric slides over the shoulder brackets into place.
+  which would crumple them. Once the seams have met, the cap rises six-fold so they hold like
+  stitches under the garment's weight.
+  Gravity eases in once the seams are closing. Friction against the robot is low, so fabric
+  slides over the shoulder brackets into place. Self-collision is off: it can trap a seam edge on
+  the wrong side of the piece it's sewn to, which leaves the back of the armhole open.
 - **export_sew.py** choreographs the page timeline at 30 fps:
   - **0–60:** pieces fly in on curved paths, spinning and fluttering.
   - **60–130:** the simulation, time-warped so the sewing gets half of it.
