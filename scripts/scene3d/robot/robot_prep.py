@@ -1,6 +1,6 @@
 """Prepare the NEXBOT robot for the dressing scene.
 
-    bvenv/bin/python robot_prep.py nexbot.gltf
+    python robot_prep.py ../../../assets/robot/nexbot.gltf
 
 - Drops the logo, lights and cameras from the Spline export.
 - Swings each arm out at the shoulder (A-pose), so sleeves can close around the arms.

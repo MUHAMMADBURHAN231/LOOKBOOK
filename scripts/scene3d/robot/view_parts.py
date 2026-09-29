@@ -1,6 +1,6 @@
 """Render the prepared robot parts (and optional garment meshes) with Cycles.
 
-    bvenv/bin/python view_parts.py out_prefix [--angles 0,-35] [--extra mesh.npz ...]
+    python view_parts.py out_prefix [--angles 0,-35] [--extra mesh.npz ...]
 """
 import argparse
 import math

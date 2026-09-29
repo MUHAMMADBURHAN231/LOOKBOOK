@@ -1,5 +1,10 @@
 # Landing page 3D scene: cloth-simulated dressing
 
+> **The page now uses the robot version in [`robot/`](robot/README.md):** the NEXBOT mannequin
+> dressed by garments sewn from flat 2D patterns. This directory's top-level scripts are the
+> earlier version, which dressed a scanned model of the woman from the landing video. They are
+> kept for reference.
+
 The home page's story is a real-time 3D scene (`frontend/src/components/three/DressingScene.tsx`):
 a 3D model of the woman from the landing video, and three garments that dress her as you scroll.
 Each garment is split into its sewing panels. The panels fly in from the right, fan out around

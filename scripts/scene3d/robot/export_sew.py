@@ -3,7 +3,8 @@
     python export_sew.py <out dir>
 
 Timeline (30 fps): 0-60 the flat pieces fly in from the right, fluttering, to where they're
-arranged around the robot; 60-130 they sew together and drape (the simulation); for the blouse and
+arranged around the robot; 60-130 they sew together and drape (the simulation, time-warped so the
+sewing gets half of it); for the blouse and
 blazer, 130-155 the garment un-sews (the simulation backwards) and 155-190 the pieces fly off to
 the left (pieces on her left arc over her head). Each piece's best-fit rigid motion is stored every
 frame; the cloth's own deformation on top, every other frame as int8 per piece.
@@ -30,6 +31,12 @@ FLY, SEW, UNSEW, AWAY = 60, 70, 25, 35
 def ease(x):
     x = np.clip(x, 0, 1)
     return x * x * (3 - 2 * x)
+
+
+def warp(t):
+    """Simulation time for scroll time t (0..1): the sewing (the first third of the simulation)
+    gets the first half of the scroll, the settling the rest."""
+    return np.clip(t, 0, 1) ** 1.6
 
 
 def kabsch(a, b):
@@ -117,9 +124,9 @@ for name in ("blouse", "blazer", "coat"):
                 x[m] = rot.apply(local + wave) + centre[p] + tr
             pos[f] = x
         elif f < FLY + SEW:
-            pos[f] = sample(sim, (f - FLY) / (SEW - 1) * (len(sim) - 1))
+            pos[f] = sample(sim, warp((f - FLY) / (SEW - 1)) * (len(sim) - 1))
         else:
-            pos[f] = sample(sim, (1 - (f - FLY - SEW) / (UNSEW - 1)) * (len(sim) - 1))
+            pos[f] = sample(sim, warp(1 - (f - FLY - SEW) / (UNSEW - 1)) * (len(sim) - 1))
         # Best-fit rigid motion per piece (rest -> this frame), so the residual is only cloth.
         for p in range(P):
             m = panel == p
@@ -129,13 +136,22 @@ for name in ("blouse", "blazer", "coat"):
 
     # Seams: fully closed while the garment is on (the simulation closes them to ~2 mm).
     fo = np.arange(frames)
-    zipw = ease((fo - (FLY + 30)) / 25)
+    zipw = ease((fo - (FLY + 12)) / 30)
     if leaves:
         zipw = np.where(fo >= FLY + SEW, 1 - ease((fo - FLY - SEW) / 8), zipw)
+    # Each seam vertex moves toward the mean of itself and its partners (a vertex can be sewn to
+    # several); a few rounds close the seam without sliding along it.
     a, b = sew[:, 0], sew[:, 1]
-    mid = 0.5 * (pos[:, a] + pos[:, b])
-    pos[:, a] += (mid - pos[:, a]) * zipw[:, None, None]
-    pos[:, b] += (mid - pos[:, b]) * zipw[:, None, None]
+    cnt = np.zeros(len(rest))
+    np.add.at(cnt, a, 1)
+    np.add.at(cnt, b, 1)
+    seam = cnt > 0
+    for _ in range(4):
+        acc = np.zeros_like(pos)
+        np.add.at(acc, (slice(None), a), pos[:, b])
+        np.add.at(acc, (slice(None), b), pos[:, a])
+        target = 0.5 * (pos[:, seam] + acc[:, seam] / cnt[seam][None, :, None])
+        pos[:, seam] += (target - pos[:, seam]) * zipw[:, None, None]
 
     def target(f):
         out = np.empty_like(rest)

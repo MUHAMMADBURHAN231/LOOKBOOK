@@ -33,11 +33,15 @@ for p in parts:
 ball = ndimage.generate_binary_structure(3, 1)
 occ = ndimage.binary_closing(occ, structure=ball, iterations=3)
 occ = ndimage.binary_fill_holes(occ)
-verts, faces, _, _ = measure.marching_cubes(occ.astype(np.float32), 0.5, spacing=(PITCH,) * 3)
+# A smooth surface: grow by a voxel (so the skin stays outside the shell), then blur the occupancy
+# before extracting it, which removes the voxel staircase the cloth would otherwise drape over.
+occ = ndimage.binary_dilation(occ, structure=ball, iterations=1)
+field = ndimage.gaussian_filter(occ.astype(np.float32), sigma=1.6)
+verts, faces, _, _ = measure.marching_cubes(field, 0.5, spacing=(PITCH,) * 3)
 verts += lo
 ms = pymeshlab.MeshSet()
 ms.add_mesh(pymeshlab.Mesh(verts, faces[:, ::-1]))
-ms.apply_coord_taubin_smoothing(stepsmoothnum=30)
+ms.apply_coord_taubin_smoothing(stepsmoothnum=60)
 ms.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(0.008), iterations=4)
 m = ms.current_mesh()
 env = trimesh.Trimesh(m.vertex_matrix(), m.face_matrix(), process=True)

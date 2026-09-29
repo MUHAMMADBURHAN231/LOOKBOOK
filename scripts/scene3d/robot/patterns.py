@@ -17,31 +17,37 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pymeshlab
-from matplotlib.path import Path as MPath
-from scipy.spatial import Delaunay
+import triangle
 
 HERE = Path(__file__).resolve().parent
 lm = json.loads((HERE / "work/landmarks.json").read_text())
 name = sys.argv[1]
 
-TOP = 1.405  # shoulder line at the neck
+TOP = 1.4    # shoulder line at the neck (the robot's torso top is at 1.395)
 H = 0.012    # mesh edge length
 
+# Measured on the robot's collision envelope: chest about 1.1-1.15 m round, waist 0.65 m (z 1.0),
+# pelvis 0.99 m (z 0.9); arm 0.53 m round just below the shoulder, 0.46 m at the forearm, 0.40 m at
+# the wrist. The arm is thick, so sleeves are sized from it and the armhole follows from the sleeve.
+# Hems are drafted about 8 cm long: the sleeves sit up in the robot's high armpit (z 1.21) and lift
+# the whole garment by about that much.
 STYLE = {
-    # half widths (m, flat): chest, hem; hem height; neckline; shoulder; sleeve half widths at the
-    # cap and cuff, sleeve length and cap height
-    "blouse": dict(chest=0.35, hem_w=0.37, hem=0.74, neck_w=0.085, neck_front=0.07, neck_back=0.02,
-                   shoulder_drop=0.05, shoulder_w=0.22, armpit=1.12, sleeve_top=0.0, sleeve_bottom=0.30,
-                   sleeve_len=0.59, cap_h=0.06, open_front=False),
-    "blazer": dict(chest=0.34, hem_w=0.35, hem=0.76, neck_w=0.09, neck_front=0.26, neck_back=0.02,
-                   shoulder_drop=0.04, shoulder_w=0.23, armpit=1.12, sleeve_top=0.0, sleeve_bottom=0.25,
-                   sleeve_len=0.58, cap_h=0.06, open_front=True),
-    "coat": dict(chest=0.37, hem_w=0.47, hem=0.38, neck_w=0.095, neck_front=0.22, neck_back=0.025,
-                 shoulder_drop=0.04, shoulder_w=0.24, armpit=1.11, sleeve_top=0.0, sleeve_bottom=0.27,
-                 sleeve_len=0.61, cap_h=0.06, open_front=True),
+    # Half widths of each bodice piece (m, flat; front and back alike): chest at the armpit, waist,
+    # hem; heights of the waist and hem; neckline; shoulder (arc from the centre) and its drop.
+    # Sleeve: half widths at the top and the cuff, length (cap top to cuff) and cap height (low: the
+    # robot's upper arm is raised about 49 degrees). Buttons: heights where an open front is tacked.
+    "blouse": dict(chest=0.33, waist=0.305, waist_z=1.02, hem_w=0.32, hem=0.72, neck_w=0.105, neck_front=0.08,
+                   neck_back=0.02, shoulder_drop=0.035, shoulder_w=0.175, sleeve_top=0.3, sleeve_bottom=0.25,
+                   sleeve_len=0.56, cap_h=0.08, open_front=False, buttons=()),
+    "blazer": dict(chest=0.335, waist=0.29, waist_z=1.02, hem_w=0.34, hem=0.74, neck_w=0.11, neck_front=0.3,
+                   neck_back=0.02, shoulder_drop=0.03, shoulder_w=0.18, sleeve_top=0.295, sleeve_bottom=0.245,
+                   sleeve_len=0.55, cap_h=0.085, open_front=True, buttons=(1.075,)),
+    "coat": dict(chest=0.355, waist=0.325, waist_z=1.03, hem_w=0.44, hem=0.4, neck_w=0.115, neck_front=0.26,
+                 neck_back=0.022, shoulder_drop=0.03, shoulder_w=0.185, sleeve_top=0.31, sleeve_bottom=0.26,
+                 sleeve_len=0.58, cap_h=0.085, open_front=True, buttons=(1.1, 0.97)),
 }
 st = STYLE[name]
+ARMHOLE_SCOOP = -0.05  # the armhole curves in: the robot's arm root is thick
 
 
 def curve(p0, p1, bulge, n=12):
@@ -72,8 +78,12 @@ def bodice(front: bool, half: str | None):
     else:
         neck = curve((0, top - nd), (nw, top), -0.25 * nd, 10)
     shoulder = np.array([[nw, top], sp])
-    arm = curve(sp, ap, -0.035, 12)
-    side = np.array([ap, hp])
+    arm = curve(sp, ap, ARMHOLE_SCOOP, 16)
+    # Side seam through the waist: a quadratic through the waist point.
+    wp = np.array([st["waist"], st["waist_z"]])
+    t = np.linspace(0, 1, 16)[:, None]
+    ctrl = 2 * wp - 0.5 * (np.array(ap) + np.array(hp))
+    side = (1 - t) ** 2 * np.array(ap) + 2 * (1 - t) * t * ctrl + t * t * np.array(hp)
     hem = np.array([hp, [0 if not (front and st["open_front"]) else 0.012, st["hem"]]])
     segs["neck"] = neck
     segs["shoulder"] = shoulder
@@ -88,30 +98,18 @@ def bodice(front: bool, half: str | None):
 
 
 def mesh_polygon(poly):
-    """Triangulate a 2D polygon with roughly even H-sized triangles."""
-    path = MPath(poly)
-    lo, hi = poly.min(0), poly.max(0)
-    xs = np.arange(lo[0], hi[0] + H, H)
-    ys = np.arange(lo[1], hi[1] + H, H * 0.866)
-    grid = np.array([[x + (0.5 * H if j % 2 else 0), y] for j, y in enumerate(ys) for x in xs])
-    inside = grid[path.contains_points(grid, radius=-H * 0.4)]
-    # Resample the boundary at H spacing.
+    """Triangulate a 2D polygon with even, near-equilateral H-sized triangles (constrained
+    Delaunay with a quality bound; the boundary keeps its H spacing)."""
     closed = np.vstack([poly, poly[:1]])
     seg = np.linalg.norm(np.diff(closed, axis=0), axis=1)
     cum = np.concatenate([[0], np.cumsum(seg)])
-    t = np.arange(0, cum[-1], H)
+    n = max(3, int(round(cum[-1] / H)))
+    t = np.linspace(0, cum[-1], n, endpoint=False)
     bpts = np.column_stack([np.interp(t, cum, closed[:, 0]), np.interp(t, cum, closed[:, 1])])
-    pts = np.vstack([bpts, inside])
-    tri = Delaunay(pts).simplices
-    cen = pts[tri].mean(1)
-    tri = tri[path.contains_points(cen)]
-    ms = pymeshlab.MeshSet()
-    ms.add_mesh(pymeshlab.Mesh(np.column_stack([pts, np.zeros(len(pts))]), tri))
-    ms.meshing_remove_unreferenced_vertices()
-    ms.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(H), iterations=5, featuredeg=180,
-                                            checksurfdist=False)
-    m = ms.current_mesh()
-    return m.vertex_matrix()[:, :2], m.face_matrix()
+    segs = np.column_stack([np.arange(n), (np.arange(n) + 1) % n])
+    out = triangle.triangulate(dict(vertices=bpts, segments=segs), f"pq30Ya{0.433 * H * H * 1.5:.8f}")
+    uv, f = out["vertices"], out["triangles"]
+    return uv, f
 
 
 pieces = []  # dicts: name, uv, faces, segs (name -> polyline in uv)
@@ -147,17 +145,19 @@ def polyline_length(p):
 
 
 def cap_curve(top, cap_h):
-    c = curve((-top, cap_h), (top, cap_h), -cap_h * 1.6, 24)
-    c[:, 1] = np.clip(c[:, 1], 0, None)
-    return c
+    """Sleeve cap from underarm to underarm: an S-curve dome, cap_h tall, flat on top."""
+    u = np.linspace(-top, top, 33)
+    return np.column_stack([u, cap_h * 0.5 * (1 - np.cos(np.pi * u / top))])
 
 
-def sleeve_top_for(armhole_len):
-    """Half width of the sleeve at the cap so the cap edge matches the armhole plus 4% ease."""
-    lo, hi = 0.05, 0.5
-    for _ in range(40):
+def solve_armpit():
+    """Armpit height so each armhole (front, back) is half the sleeve cap's edge less 1.5% ease."""
+    target = polyline_length(cap_curve(st["sleeve_top"], st["cap_h"])) / 1.015 / 2
+    sp = (st["shoulder_w"], TOP - st["shoulder_drop"])
+    lo, hi = 0.8, sp[1] - 0.05
+    for _ in range(50):
         mid = (lo + hi) / 2
-        if polyline_length(cap_curve(mid, st["cap_h"])) < armhole_len * 1.04:
+        if polyline_length(curve(sp, (st["chest"], mid), ARMHOLE_SCOOP, 16)) > target:
             lo = mid
         else:
             hi = mid
@@ -167,10 +167,10 @@ def sleeve_top_for(armhole_len):
 def add_sleeve(side: str):
     segs, _ = bodice(True, None)
     armhole = 2 * polyline_length(segs["armhole"])  # front + back armholes (same shape)
-    top, bot, L = sleeve_top_for(armhole), st["sleeve_bottom"], st["sleeve_len"]
+    top, bot, L = st["sleeve_top"], st["sleeve_bottom"], st["sleeve_len"]
     cap_h = st["cap_h"]
     if side == "l":
-        print(f"armhole {armhole:.3f} m -> sleeve cap half width {top:.3f} m")
+        print(f"sleeve {2 * top:.2f} m round at the top -> armhole {armhole:.3f} m, armpit at {st['armpit']:.3f} m")
     # u across (0 = outer top of the arm), v along the arm (0 = cap top, L = cuff).
     cap = cap_curve(top, cap_h)  # dome up to v=0
     right_edge = np.array([[top, cap_h], [bot, L]])
@@ -182,20 +182,21 @@ def add_sleeve(side: str):
                        segs={"cap": cap, "under_a": right_edge, "under_b": left_edge, "cuff": cuff}))
 
 
+st["armpit"] = solve_armpit()
 add_bodice(True)
 add_bodice(False)
 add_sleeve("l")
 add_sleeve("r")
 
 # --- Arrange in 3D.
-A, B_FRONT, B_BACK, YC = 0.245, 0.22, 0.2, 0.01
+A, B_FRONT, B_BACK, YC = 0.235, 0.19, 0.18, 0.01
 th = np.linspace(-np.pi, np.pi, 4001)
 ex, ey = A * np.sin(th), -np.where(np.cos(th) > 0, B_FRONT, B_BACK) * np.cos(th)
 arc = np.concatenate([[0], np.cumsum(np.hypot(np.diff(ex), np.diff(ey)))])
 arc -= np.interp(0, th, arc)  # arc length measured from the centre front
 
 
-def wrap_bodice(uv, front, lift=0.03):
+def wrap_bodice(uv, front, lift=0.012):
     """u = arc length from centre front (front piece) or centre back (back piece)."""
     u = uv[:, 0]
     t = np.interp(u, arc, th)
@@ -207,19 +208,50 @@ def wrap_bodice(uv, front, lift=0.03):
     return np.column_stack([x, y, uv[:, 1] + lift])
 
 
+SLIDE = 0.05
+
+
+def arm_curve(side):
+    """Smooth centreline of the (bent) arm: from above the shoulder, through the elbow, past the
+    wrist; as dense points, their arc length from the shoulder, and parallel-transported frames
+    (tangent, outer side, front)."""
+    S, E, W = (np.array(lm[f"{k}_{side}"]) for k in ("shoulder", "elbow", "wrist"))
+    up = (E - S) / np.linalg.norm(E - S)
+    fore = (W - E) / np.linalg.norm(W - E)
+    p0, p2 = S - 0.16 * up, W + 0.3 * fore
+    ctrl = 2 * E - 0.5 * (p0 + p2)          # quadratic through the elbow at its midpoint
+    t = np.linspace(0, 1, 400)[:, None]
+    c = (1 - t) ** 2 * p0 + 2 * (1 - t) * t * ctrl + t * t * p2
+    arc = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(c, axis=0), axis=1))])
+    arc -= arc[np.argmin(np.linalg.norm(c - S, axis=1))]
+    tan = np.gradient(c, axis=0)
+    tan /= np.linalg.norm(tan, axis=1)[:, None]
+    out = np.array([1.0 if side == "l" else -1.0, 0, 0])
+    e1 = [out - tan[0] * (out @ tan[0])]
+    for k in range(1, len(c)):
+        v = e1[-1] - tan[k] * (e1[-1] @ tan[k])
+        e1.append(v / np.linalg.norm(v))
+    e1 = np.array(e1)
+    e2 = np.cross(tan, e1)
+    if e2[len(c) // 2, 1] > 0:
+        e2 = -e2                            # e2 points to the front (-y)
+    return c, arc, e1, e2
+
+
 def wrap_sleeve(uv, s):
-    S = np.array(lm[f"shoulder_{'l' if s > 0 else 'r'}"])
-    d = np.array(lm[f"arm_dir_{'l' if s > 0 else 'r'}"])
-    out = np.array([s, 0.0, 0.0])
-    e1 = out - d * (out @ d)
-    e1 /= np.linalg.norm(e1)             # outer side of the arm
-    e2 = np.cross(d, e1)                 # forward/back
-    if e2[1] > 0:
-        e2 = -e2                          # e2 points to the front (-y)
-    r = 0.125
-    phi = uv[:, 0] / r * s               # 0 on the outer side; +-pi underneath (towards the body)
-    along = uv[:, 1] - 0.11
-    return S + np.outer(along, d) + r * (np.outer(np.cos(phi), e1) + np.outer(np.sin(phi), e2))
+    """Around the arm's centreline: u across (0 on the outer side, the underarm seam underneath),
+    v along. The sleeve starts SLIDE lower than where it ends up, clear of the shoulder, with its
+    open underarm seam below the arm; sewing slides it up into the armhole (as in Marvelous
+    Designer)."""
+    c, arc, e1, e2 = arm_curve("l" if s > 0 else "r")
+    along = uv[:, 1] - 0.13 + SLIDE
+    # Wider near the shoulder, to clear the robot's shoulder cap.
+    r = 0.11 + 0.035 * np.clip((0.1 - along) / 0.12, 0, 1)
+    phi = uv[:, 0] / r * s
+    pos = np.column_stack([np.interp(along, arc, c[:, k]) for k in range(3)])
+    f1 = np.column_stack([np.interp(along, arc, e1[:, k]) for k in range(3)])
+    f2 = np.column_stack([np.interp(along, arc, e2[:, k]) for k in range(3)])
+    return pos + r[:, None] * (np.cos(phi)[:, None] * f1 + np.sin(phi)[:, None] * f2)
 
 
 V, F, P = [], [], []
@@ -239,36 +271,60 @@ for pid, pc in enumerate(pieces):
     P.append(np.full(len(xyz), pid))
     offset += len(xyz)
 V, F, P = np.vstack(V), np.vstack(F), np.concatenate(P)
+UV = np.vstack([pc["uv"] for pc in pieces])  # the flat pattern: the cloth's rest shape
 
-# Clear the body: push anything inside or within 3 cm of the envelope outward, spreading the push
-# smoothly over each piece so the pieces stay smooth; repeat until clear.
+# Clear the body: anything inside or within 1.5 cm of the envelope is pushed out along the nearest
+# surface normal. The push is smoothed over each flat piece (Gaussian in pattern space) so the
+# arrangement stays smooth, and applied in small rounds until everything is clear.
 import trimesh  # noqa: E402
+from scipy.spatial import cKDTree  # noqa: E402
 
 _e = np.load(HERE / "work/envelope.npz")
 _env = trimesh.Trimesh(_e["v"], _e["f"], process=False)
 _edges = trimesh.Trimesh(V, F, process=False).edges_unique
-for _round in range(6):
-    cp, _, tri = _env.nearest.on_surface(V)
-    sd = np.einsum("ij,ij->i", V - cp, _env.face_normals[tri])
-    need = sd < 0.03
+_smooth = []
+for pid in range(len(pieces)):
+    idx = np.nonzero(P == pid)[0]
+    tree = cKDTree(UV[idx])
+    nb = tree.query_ball_point(UV[idx], r=0.09)
+    rows = np.repeat(np.arange(len(idx)), [len(n) for n in nb])
+    cols = np.concatenate(nb)
+    w = np.exp(-np.sum((UV[idx][rows] - UV[idx][cols]) ** 2, axis=1) / (2 * 0.03 ** 2))
+    _smooth.append((idx, rows, cols, w))
+
+
+def signed_distance(x):
+    """Distance to the envelope, negative inside (sign from the nearest face's normal)."""
+    cp, _, tri = _env.nearest.on_surface(x)
+    nrm = _env.face_normals[tri]
+    return np.einsum("ij,ij->i", x - cp, nrm), nrm
+
+
+print(f"before clearing: {int((signed_distance(V)[0] < 0).sum())} vertices inside the robot")
+for _round in range(40):
+    sd, nrm = signed_distance(V)
+    need = sd < 0.015
     if not need.any():
         break
-    disp = np.where(need[:, None], _env.face_normals[tri] * (0.035 - sd)[:, None], 0.0)
-    for _ in range(25):
-        acc = np.zeros_like(disp)
-        cnt = np.zeros(len(disp))
-        np.add.at(acc, _edges[:, 0], disp[_edges[:, 1]])
-        np.add.at(acc, _edges[:, 1], disp[_edges[:, 0]])
-        np.add.at(cnt, _edges[:, 0], 1)
-        np.add.at(cnt, _edges[:, 1], 1)
-        avg = acc / np.maximum(cnt, 1)[:, None]
-        # Spread the push without shrinking it: keep whichever is larger, own or neighbours'.
-        own_bigger = np.linalg.norm(disp, axis=1) >= np.linalg.norm(avg, axis=1)
-        disp = np.where(own_bigger[:, None], disp, avg)
-    V = V + disp
+    want = np.where(need[:, None], nrm * (0.02 - sd)[:, None], 0.0)
+    disp = np.zeros_like(V)
+    for idx, rows, cols, w in _smooth:
+        acc = np.zeros((len(idx), 3))
+        np.add.at(acc, rows, want[idx][cols] * w[:, None])
+        wsum = np.zeros(len(idx))
+        np.add.at(wsum, rows, w * need[idx][cols])
+        # Weighted mean of the pushes nearby (only over vertices that need one), faded by how much
+        # of the neighbourhood needs it, so the push falls off smoothly around the region.
+        full = np.zeros(len(idx))
+        np.add.at(full, rows, w)
+        disp[idx] = acc / np.maximum(wsum, 1e-9)[:, None] * np.clip(wsum / full * 3, 0, 1)[:, None]
+    V = V + 0.5 * disp
 cp, _, tri = _env.nearest.on_surface(V)
 sd = np.einsum("ij,ij->i", V - cp, _env.face_normals[tri])
-print(f"arrangement: {int((sd < 0).sum())} vertices inside, {int((sd < 0.02).sum())} within 2 cm")
+_e2 = np.linalg.norm(UV[_edges[:, 0]] - UV[_edges[:, 1]], axis=1)
+_e3 = np.linalg.norm(V[_edges[:, 0]] - V[_edges[:, 1]], axis=1) / _e2
+print(f"arrangement: {int((sd < 0).sum())} vertices inside, {int((sd < 0.01).sum())} within 1 cm; "
+      f"edge length vs pattern {_e3.min():.2f}..{_e3.max():.2f}")
 
 
 def edge_vertices(pc, polyline, tol=H * 0.45):
@@ -286,7 +342,12 @@ def edge_vertices(pc, polyline, tol=H * 0.45):
         better = dd < best_d
         best_d[better] = dd[better]
         best_t[better] = (cum[i] + t * np.sqrt(L2))[better] / max(cum[-1], 1e-12)
-    idx = np.nonzero(best_d < tol)[0]
+    f = pc["faces"]
+    e = np.sort(np.vstack([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1)
+    ue, cnt = np.unique(e, axis=0, return_counts=True)
+    boundary = np.zeros(len(uv), bool)
+    boundary[ue[cnt == 1].ravel()] = True
+    idx = np.nonzero((best_d < tol) & boundary)[0]
     return idx[np.argsort(best_t[idx])] + pc["offset"], np.sort(best_t[idx])
 
 
@@ -296,10 +357,11 @@ def sew(pa, sa, pb, sb, reverse=False):
     if reverse:
         tb = 1 - tb
     pairs = []
-    short, long_, ts, tl, flip = (ia, ib, ta, tb, False) if len(ia) <= len(ib) else (ib, ia, tb, ta, True)
-    for i, t in zip(short, ts, strict=True):
-        j = long_[np.argmin(np.abs(tl - t))]
-        pairs.append((j, i) if flip else (i, j))
+    # Both ways, so no point on either edge is left unsewn (it would fold into a flap).
+    for i, t in zip(ia, ta, strict=True):
+        pairs.append((i, ib[np.argmin(np.abs(tb - t))]))
+    for j, t in zip(ib, tb, strict=True):
+        pairs.append((ia[np.argmin(np.abs(ta - t))], j))
     return pairs
 
 
@@ -325,9 +387,20 @@ for s, side in ((1, "l"), (-1, "r")):
     cap_front, cap_back = (upper, lower) if s > 0 else (lower, upper)
     pairs += sew(sl, cap_front, f, fs("armhole"))
     pairs += sew(sl, cap_back, back, bs("armhole"))
+# Buttons: tack the two front edges together at each button height.
+if st["open_front"]:
+    fl, fr = by["front_l"], by["front_r"]
+    for z in st["buttons"]:
+        il, _ = edge_vertices(fl, fl["segs"]["front"])
+        ir, _ = edge_vertices(fr, fr["segs"]["front"])
+        zl = fl["uv"][il - fl["offset"], 1]
+        zr = fr["uv"][ir - fr["offset"], 1]
+        for i in il[np.abs(zl - z) < 0.012]:
+            j = ir[np.argmin(np.abs(zr - fl["uv"][i - fl["offset"], 1]))]
+            pairs.append((i, j))
 pairs = np.unique(np.sort(np.array(pairs), axis=1), axis=0)
 pairs = pairs[pairs[:, 0] != pairs[:, 1]]
-np.savez(HERE / f"work/{name}-pattern.npz", v=V, f=F, panel=P, sew=pairs,
+np.savez(HERE / f"work/{name}-pattern.npz", v=V, uv=UV, f=F, panel=P, sew=pairs,
          names=np.array([pc["name"] for pc in pieces]))
 gaps = np.linalg.norm(V[pairs[:, 0]] - V[pairs[:, 1]], axis=1)
 print(f"{name}: {len(pieces)} pieces, {len(V)} vertices, {len(F)} triangles, {len(pairs)} sewing pairs "

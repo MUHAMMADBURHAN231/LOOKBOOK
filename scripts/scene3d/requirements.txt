@@ -4,6 +4,8 @@ numpy==2.4.6
 pillow==12.3.0
 pymeshlab==2025.7.post1
 rtree==1.4.1
+scikit-image==0.26.0
 scipy==1.17.1
 shapely==2.1.2
+triangle==20250106
 trimesh==5.1.0
