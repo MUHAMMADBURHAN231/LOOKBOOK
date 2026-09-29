@@ -9,8 +9,16 @@ import { Scramble } from "@/components/marketing/Scramble";
 import ScrollVideo, {
   type ScrollVideoManifest,
 } from "@/components/marketing/ScrollVideo";
+import type { Scene3DManifest } from "@/components/three/DressingScene";
 
-// Fallback when the video frames aren't installed: the 3D mannequin. WebGL only runs in the browser.
+// WebGL only runs in the browser. The cloth-simulated scene is the main story; the scroll video
+// stands in without WebGL, and the stylised mannequin when neither is installed.
+const DressingScene = dynamic(
+  () => import("@/components/three/DressingScene"),
+  {
+    ssr: false,
+  },
+);
 const WomanScene = dynamic(() => import("@/components/three/WomanScene"), {
   ssr: false,
 });
@@ -97,24 +105,36 @@ function positionFor(scroll: number, marks: number[]) {
   return from + (marks[seg] - from) * travel(u);
 }
 
-export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
+export function LandingStory({
+  video,
+  scene3d,
+}: {
+  video: ScrollVideoManifest | null;
+  scene3d: Scene3DManifest | null;
+}) {
   const story = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLSpanElement>(null);
   const progress = useRef(0);
   const [look, setLook] = useState(-1);
   const [settled, setSettled] = useState(false);
   const [loaded, setLoaded] = useState(0);
-  const [ready, setReady] = useState(!video);
+  const [use3d, setUse3d] = useState(!!scene3d);
+  const [ready, setReady] = useState(!scene3d && !video);
   const state = useRef({ look: -1, settled: false });
-  // Where each look is complete, as video positions. Equal thirds if the manifest has none.
+  const clip = use3d ? null : video;
+  // Where each look is complete, as positions along the story. The 3D scene has its stations at
+  // equal thirds; the video records its own.
   const marks = useMemo(
     () =>
-      video?.marks?.length === LOOKS.length
-        ? video.marks
+      !use3d && clip?.marks?.length === LOOKS.length
+        ? clip.marks
         : LOOKS.map((_, i) => (i + 1) / LOOKS.length),
-    [video],
+    [use3d, clip],
   );
-  const frames = video?.count ?? 1;
+  // Resolution of the position, for "settled" (within about a frame of a station).
+  const frames = use3d ? 390 : (clip?.count ?? 1);
+  const staged = use3d || !!clip;
+  const calloutRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     const el = story.current;
@@ -123,13 +143,14 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
       trigger: el,
       start: "top 55%",
       end: "bottom bottom",
-      onUpdate: (self) =>
-        (progress.current = video
-          ? positionFor(self.progress, marks)
-          : self.progress),
+      onUpdate: (self) => {
+        // ScrollTrigger can report NaN while the layout settles (start and end coincide).
+        const p = Number.isFinite(self.progress) ? self.progress : 0;
+        progress.current = staged ? positionFor(p, marks) : p;
+      },
     });
     return () => trigger.kill();
-  }, [video, marks]);
+  }, [staged, marks]);
 
   // Discrete story state follows the frame actually drawn.
   const onFrame = useCallback(
@@ -157,7 +178,22 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
     if (coarseReady) setReady(true);
   }, []);
 
-  // The 3D fallback reports garments directly.
+  // Spec cards follow points on the 3D model (written straight to the DOM every frame).
+  const onAnchors = useCallback(
+    (points: { x: number; y: number; visible: boolean }[]) => {
+      points.forEach((pt, i) => {
+        const el = calloutRefs.current[i];
+        if (el) el.style.transform = `translate3d(${pt.x}px, ${pt.y}px, 0)`;
+      });
+    },
+    [],
+  );
+  const onUnsupported = useCallback(() => {
+    setUse3d(false);
+    setReady(!video);
+  }, [video]);
+
+  // The stylised mannequin reports garments directly.
   const onGarment = useCallback(
     (i: number) => setLook(Math.min(i, LOOKS.length - 1)),
     [],
@@ -167,7 +203,7 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
 
   return (
     <div className="relative">
-      {video && <Loader fraction={loaded} ready={ready} />}
+      {staged && <Loader fraction={loaded} ready={ready} />}
 
       <div className="sticky top-0 h-dvh w-full overflow-hidden">
         {/* Backdrop: soft vignette and a sparse dot grid. */}
@@ -184,12 +220,39 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
           {current && <Scramble text={current.name} duration={900} />}
         </div>
 
-        {video ? (
+        {use3d && scene3d ? (
+          <>
+            <DressingScene
+              manifest={scene3d}
+              progress={progress}
+              onFrame={onFrame}
+              onLoad={onLoad}
+              onAnchors={onAnchors}
+              onUnsupported={onUnsupported}
+              label="A model being dressed in a silk blouse, a tailored blazer and a wool overcoat as you scroll. The garments assemble around her from their sewing panels."
+              className="absolute inset-0"
+            />
+            <div className="pointer-events-none absolute bottom-0 left-1/2 aspect-[9/16] h-[58dvh] -translate-x-1/2 md:top-1/2 md:bottom-auto md:left-[64%] md:h-[92dvh] md:-translate-y-1/2">
+              <Brackets />
+            </div>
+            {LOOKS.map((l, i) => (
+              <Callout
+                key={l.code}
+                ref={(el) => {
+                  calloutRefs.current[i] = el;
+                }}
+                look={l}
+                index={i}
+                visible={look === i && settled}
+              />
+            ))}
+          </>
+        ) : clip ? (
           // Blend on this wrapper, not the canvas: the transform makes this element its own stacking
           // context, and the white backdrop must multiply into the stage behind it.
           <div className="absolute bottom-0 left-1/2 aspect-[9/16] h-[58dvh] -translate-x-1/2 mix-blend-multiply md:top-1/2 md:bottom-auto md:left-[64%] md:h-[92dvh] md:-translate-y-1/2">
             <ScrollVideo
-              manifest={video}
+              manifest={clip}
               progress={progress}
               onFrame={onFrame}
               onLoad={onLoad}
@@ -259,11 +322,15 @@ export function LandingStory({ video }: { video: ScrollVideoManifest | null }) {
             </div>
             <div className="hud absolute right-0 bottom-7 hidden text-right md:block">
               <p>
-                {video
-                  ? `${video.width} × ${video.height} · ${video.count} frames`
-                  : "Real-time 3D"}
+                {use3d
+                  ? "Real-time 3D · WebGL"
+                  : clip
+                    ? `${clip.width} × ${clip.height} · ${clip.count} frames`
+                    : "Real-time 3D"}
                 <br />
-                One take, no cuts.
+                {use3d
+                  ? "Cloth simulated, not keyframed."
+                  : "One take, no cuts."}
               </p>
             </div>
           </div>
@@ -349,19 +416,25 @@ function Callout({
   look,
   index,
   visible,
+  ref,
 }: {
   look: Look;
   index: number;
   visible: boolean;
+  /** With a ref the caller positions the card (a transform to a projected 3D point); without, it
+   *  sits at the look's anchor within the frame. */
+  ref?: React.Ref<HTMLDivElement>;
 }) {
   return (
     <div
+      ref={ref}
       aria-hidden={!visible}
-      className="pointer-events-none absolute hidden md:block"
-      style={{
-        left: `${look.anchor.x * 100}%`,
-        top: `${look.anchor.y * 100}%`,
-      }}
+      className="pointer-events-none absolute hidden will-change-transform md:block"
+      style={
+        ref
+          ? { left: 0, top: 0 }
+          : { left: `${look.anchor.x * 100}%`, top: `${look.anchor.y * 100}%` }
+      }
     >
       <span
         className={`absolute -top-1 -left-1 size-2 rounded-full bg-ink transition-transform duration-300 ${

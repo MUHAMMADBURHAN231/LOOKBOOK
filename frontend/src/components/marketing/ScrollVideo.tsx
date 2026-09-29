@@ -304,11 +304,14 @@ export default function ScrollVideo({
     const tick = (_time: number, deltaMs: number) => {
       // The target is a whole frame, so the playhead always comes to rest on one frame rather than
       // a blend of two (a double edge on a moving garment); it still glides between frames.
+      // NaN-proof: a NaN here would stick in the eased playhead for good.
+      const raw = progress.current ?? 0;
       const target = Math.round(
-        Math.min(1, Math.max(0, progress.current ?? 0)) * (count - 1),
+        (Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0) *
+          (count - 1),
       );
       const before = shown;
-      if (shown < 0 || reduced) {
+      if (shown < 0 || !Number.isFinite(shown) || reduced) {
         shown = target;
       } else if (shown !== target) {
         const k = 1 - Math.exp(-(Math.min(deltaMs, 100) / 1000) * follow);

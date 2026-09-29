@@ -17,3 +17,9 @@ backups/
 # Local secrets (never commit)
 .env.local
 .env.*.local
+
+# 3D scene pipeline: downloaded models and intermediates (see scripts/scene3d/README.md)
+scripts/scene3d/gen/
+scripts/scene3d/work/
+scripts/scene3d/web/
+scripts/scene3d/r/

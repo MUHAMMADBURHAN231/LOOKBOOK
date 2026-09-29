@@ -47,12 +47,14 @@ export async function proxy(request: NextRequest) {
   const csp = [
     "default-src 'self'",
     // Nonce + strict-dynamic: only our own bundles (and scripts they load, e.g. Turnstile) run.
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    // 'wasm-unsafe-eval' lets the 3D model's mesh decoder compile WebAssembly; it does not allow eval.
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' blob: data: ${api.origin} ${STORAGE_ORIGIN} https:`,
     "font-src 'self'",
     // API + its WebSocket, presigned storage uploads, and the realtime video service (WebRTC signalling).
-    `connect-src 'self' ${api.origin} ${apiWs} ${STORAGE_ORIGIN} https: wss:`,
+    // blob: is the page's own object URLs (textures unpacked from the landing page's 3D model).
+    `connect-src 'self' blob: ${api.origin} ${apiWs} ${STORAGE_ORIGIN} https: wss:`,
     "media-src 'self' blob:",
     // 'self': our own demo store frames /embed. Turnstile renders in a Cloudflare iframe.
     "frame-src 'self' https://challenges.cloudflare.com",
