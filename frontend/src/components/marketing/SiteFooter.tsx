@@ -15,12 +15,18 @@ export function SiteFooter() {
         <Wordmark />
         <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3">
           {LINKS.map(([label, href]) => (
-            <Link key={href} href={href} className="text-sm text-ink-soft transition-colors hover:text-ink">
+            <Link
+              key={href}
+              href={href}
+              className="text-sm text-ink-soft transition-colors hover:text-ink"
+            >
               {label}
             </Link>
           ))}
         </nav>
-        <p className="text-sm text-ink-muted">Photos are encrypted and deleted after 14 days.</p>
+        <p className="text-sm text-ink-muted">
+          Photos are encrypted and deleted after 14 days.
+        </p>
       </div>
     </footer>
   );

@@ -1,34 +1,47 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Montserrat, IBM_Plex_Mono } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { SessionProvider } from "@/lib/session";
 import "./globals.css";
 
-const montserrat = Montserrat({
+// Two families: an editorial serif for titles, a clean sans for everything you read or press.
+const serif = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-montserrat",
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
+const sans = Manrope({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-manrope",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: { default: "LOOKBOOK", template: "%s · LOOKBOOK" },
-  description: "Describe any outfit in plain English and see yourself wearing it, from a photo or live on camera.",
+  description:
+    "Describe any outfit in plain English and see yourself wearing it, from a photo or live on camera.",
 };
 
-export const viewport: Viewport = { themeColor: "#F8F8F6", colorScheme: "light" };
+export const viewport: Viewport = {
+  themeColor: "#F3F0E9",
+  colorScheme: "light",
+};
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   await headers();
   return (
-    <html lang="en" className={`${montserrat.variable} ${plexMono.variable} antialiased`}>
+    <html
+      lang="en"
+      className={`${serif.variable} ${sans.variable} antialiased`}
+    >
       <body className="min-h-dvh">
         <a
           href="#main"

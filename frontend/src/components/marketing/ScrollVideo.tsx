@@ -28,6 +28,10 @@ import { useEffect, useRef } from "react";
 
 export type ScrollVideoManifest = {
   count: number;
+  /** The film's backdrop colour, measured from its frame borders. */
+  backdrop?: string;
+  /** First and last frames, for the instant first paint and the reduced-motion page. */
+  poster?: { start: string; end: string };
   pad: number;
   width: number;
   height: number;
@@ -62,6 +66,17 @@ type Props = {
   background?: string;
   /** How quickly the playhead catches up with the scroll, per second. Higher is tighter. */
   follow?: number;
+  /** Which edges fade into `background`: all four (a framed clip) or only the bottom (a
+   *  full-bleed film that hands over to the page below). */
+  edges?: "all" | "bottom";
+  /** Horizontal anchor (0..1) when the frame is cropped, like CSS object-position, so a phone crop
+   *  stays on the subject and a poster with the same object-position lines up exactly. */
+  focusX?: number;
+  /** On a portrait canvas, draw the frame this tall (fraction of the canvas height), resting on
+   *  the bottom, with `fill` above it: room for text on a phone. Omit to always cover. */
+  portraitHeight?: number;
+  /** Colour behind and above the frame (the film's own backdrop). Defaults to `background`. */
+  fill?: string;
 };
 
 const LOOK_AHEAD = 8;
@@ -91,6 +106,10 @@ export default function ScrollVideo({
   label,
   background = "#FFFFFF",
   follow = 5,
+  edges = "all",
+  focusX = 0.5,
+  portraitHeight,
+  fill,
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
@@ -128,10 +147,22 @@ export default function ScrollVideo({
         g.fillStyle = grad;
         g.fillRect(rx, ry, rw, rh);
       };
-      band(0, 0, w * 0.16, 0, 0, 0, w * 0.16, h);
-      band(w, 0, w * 0.84, 0, w * 0.84, 0, w * 0.16, h);
-      band(0, 0, 0, h * 0.06, 0, 0, w, h * 0.06);
+      if (edges === "all") {
+        band(0, 0, w * 0.16, 0, 0, 0, w * 0.16, h);
+        band(w, 0, w * 0.84, 0, w * 0.84, 0, w * 0.16, h);
+        band(0, 0, 0, h * 0.06, 0, 0, w, h * 0.06);
+      }
       band(0, h, 0, h * 0.92, 0, h * 0.92, w, h * 0.08);
+      if (portraitHeight && h > w) {
+        // Blend the top of a portrait-fitted frame into the fill above it.
+        const top = h * (1 - portraitHeight);
+        const c = fill ?? background;
+        const grad = g.createLinearGradient(0, top, 0, top + h * 0.06);
+        grad.addColorStop(0, c);
+        grad.addColorStop(1, `${c}00`);
+        g.fillStyle = grad;
+        g.fillRect(0, top, w, h * 0.06);
+      }
     };
     const resize = () => {
       const r = el.getBoundingClientRect();
@@ -270,14 +301,18 @@ export default function ScrollVideo({
     };
 
     // --- Drawing.
+    // Cover the canvas; when the frame is wider than the canvas, keep focusX in view. On a
+    // portrait canvas with portraitHeight, the frame is shorter than the canvas and rests on the
+    // bottom, with `fill` above it.
+    const portrait = () => !!portraitHeight && el.height > el.width;
     const place = (w: number, h: number) => {
-      const s = Math.max(el.width / w, el.height / h);
-      return [
-        (el.width - w * s) / 2,
-        (el.height - h * s) / 2,
-        w * s,
-        h * s,
-      ] as const;
+      const s = portrait()
+        ? (el.height * portraitHeight!) / h
+        : Math.max(el.width / w, el.height / h);
+      // Same rule as CSS object-position: focusX of the frame lines up with focusX of the canvas.
+      const x = (el.width - w * s) * focusX;
+      const y = portrait() ? el.height - h * s : (el.height - h * s) / 2;
+      return [x, y, w * s, h * s] as const;
     };
     const drawFull = (f: Frame) =>
       ctx.drawImage(f, ...place(f.width, f.height));
@@ -327,7 +362,7 @@ export default function ScrollVideo({
       const i0 = Math.floor(shown);
       const t = shown - i0;
       ctx.globalAlpha = 1;
-      ctx.fillStyle = background;
+      ctx.fillStyle = fill ?? background;
       ctx.fillRect(0, 0, el.width, el.height);
       const full = decoded.get(i0);
       const next = decoded.get(i0 + 1);
@@ -368,7 +403,18 @@ export default function ScrollVideo({
       decoded.clear();
       sheets.forEach((f) => f && release(f));
     };
-  }, [manifest, progress, onFrame, onLoad, background, follow]);
+  }, [
+    manifest,
+    progress,
+    onFrame,
+    onLoad,
+    background,
+    follow,
+    edges,
+    focusX,
+    portraitHeight,
+    fill,
+  ]);
 
   return (
     <canvas ref={canvas} role="img" aria-label={label} className={className} />

@@ -6,45 +6,47 @@
    canvas, surface and surface-alt. */
 @theme {
   /* Canvas & surfaces */
-  --color-canvas:       #F8F7F5;
+  --color-canvas:       #F3F0E9;
   --color-surface:      #FFFFFF;
-  --color-surface-alt:  #F2F1EE;
+  --color-surface-alt:  #E9E5DC;
 
   /* Ink (text). Every text colour passes WCAG AA (4.5:1) on canvas, surface and surface-alt. */
-  --color-ink:          #111111;
-  --color-ink-soft:     #555551;
-  --color-ink-muted:    #6B6B66;
+  --color-ink:          #171714;
+  --color-ink-soft:     #6A665E;
+  --color-ink-muted:    #6A665E;
 
   /* Borders */
-  --color-border:       #E3E1DD;
+  --color-border:       rgb(23 23 20 / 0.14);
   --color-border-strong:#C4C0BA;
 
   /* Actions and focus use ink; hover is one step lighter. */
-  --color-accent:       #111111;
+  --color-accent:       #171714;
   --color-accent-hover: #3A3A3C;
   --color-accent-light: #ECEBE8;
 
   /* Names used by the app pages, mapped by role onto the light palette:
      ink-9xx were backgrounds (now light surfaces), frost/mist/fog were text (now ink shades). */
   --color-ink-950:      #FFFFFF;
-  --color-ink-900:      #F8F7F5;
+  --color-ink-900:      #F3F0E9;
   --color-ink-850:      #FFFFFF;
-  --color-ink-800:      #F2F1EE;
+  --color-ink-800:      #E9E5DC;
   --color-line:         #E3E1DD;
   --color-line-strong:  #C4C0BA;
-  --color-frost:        #111111;
-  --color-mist:         #555551;
-  --color-fog:          #6B6B66;
-  --color-signal:       #111111;
-  --color-bone:         #F8F7F5;
+  --color-frost:        #171714;
+  --color-mist:         #6A665E;
+  --color-fog:          #6A665E;
+  --color-signal:       #171714;
+  --color-bone:         #F3F0E9;
   --color-bone-deep:    #E8E5E0;
   --color-danger:       #B03A2E;
   --color-ok:           #1E7A45;
   --color-ice:          #D6E8F0;
 
   /* Fonts */
-  --font-display:  var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
-  --font-mono:     var(--font-plex-mono), ui-monospace, monospace;
+  --font-display:  var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-serif:    var(--font-cormorant), ui-serif, Georgia, serif;
+  /* No third family: small caps-style labels use the sans. */
+  --font-mono:     var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 
   /* Easing */
   --ease-out:      cubic-bezier(0.23, 1, 0.32, 1);
@@ -86,17 +88,17 @@ html.lenis body { height: auto; }
 
 /* ── Type scale ── */
 @utility display-xl {
-  font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.035em;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
 }
 
 @utility display-md {
-  font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
 }
 
 @utility display-sm {
@@ -119,8 +121,10 @@ html.lenis body { height: auto; }
 @utility hud {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
+  font-weight: 500;
   line-height: 1.4;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-ink-soft);
 }
 

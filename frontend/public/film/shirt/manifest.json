@@ -1,0 +1,32 @@
+{
+ "count": 180,
+ "pad": 3,
+ "width": 1920,
+ "height": 1080,
+ "backdrop": "#EBE7DC",
+ "marks": [
+  1.0
+ ],
+ "tiers": [
+  {
+   "width": 960,
+   "pattern": "/film/shirt/960/{i}.webp"
+  },
+  {
+   "width": 1600,
+   "pattern": "/film/shirt/1600/{i}.webp"
+  }
+ ],
+ "proxy": {
+  "pattern": "/film/shirt/proxy/{i}.webp",
+  "width": 320,
+  "height": 180,
+  "cols": 8,
+  "rows": 8,
+  "sheets": 3
+ },
+ "poster": {
+  "start": "/film/shirt/poster-start.webp",
+  "end": "/film/shirt/poster-end.webp"
+ }
+}

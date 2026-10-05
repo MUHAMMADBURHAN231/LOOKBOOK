@@ -1,17 +1,15 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import Link from "next/link";
-import { LandingStory } from "@/components/marketing/LandingStory";
+import { FashionFilm } from "@/components/marketing/FashionFilm";
 import type { ScrollVideoManifest } from "@/components/marketing/ScrollVideo";
-import type { Scene3DManifest } from "@/components/three/DressingScene";
 
-// The scroll-scrubbed video turns on once its frames are installed (scripts/build_scroll_video.py
-// writes public/look/frames/manifest.json); until then the 3D mannequin is shown.
-function loadVideo(): ScrollVideoManifest | null {
+// The landing film's frames (scripts/build_film.py writes public/film/<shot>/manifest.json).
+function loadFilm(shot: string): ScrollVideoManifest | null {
   try {
     return JSON.parse(
       readFileSync(
-        path.join(process.cwd(), "public", "look", "frames", "manifest.json"),
+        path.join(process.cwd(), "public", "film", shot, "manifest.json"),
         "utf8",
       ),
     );
@@ -19,29 +17,14 @@ function loadVideo(): ScrollVideoManifest | null {
     return null;
   }
 }
-const VIDEO = loadVideo();
-
-// The cloth-simulated 3D scene (scripts/scene3d writes public/look/3d/manifest.json).
-function loadScene(): Scene3DManifest | null {
-  try {
-    return JSON.parse(
-      readFileSync(
-        path.join(process.cwd(), "public", "look", "3d", "manifest.json"),
-        "utf8",
-      ),
-    );
-  } catch {
-    return null;
-  }
-}
-const SCENE = loadScene();
+const FILM = loadFilm("shirt");
 
 export default function HomePage() {
   return (
     <>
-      <LandingStory video={VIDEO} scene3d={SCENE} />
+      {FILM && <FashionFilm film={FILM} />}
 
-      <section className="px-6 py-40 md:px-12 md:py-56">
+      <section id="how" className="scroll-mt-16 px-6 py-40 md:px-12 md:py-56">
         <div className="mx-auto grid max-w-[1200px] gap-10 md:grid-cols-2 md:items-end">
           <h2 className="display-md text-[clamp(2rem,4.5vw,3.5rem)] text-ink">
             A fitting room on every product page.
